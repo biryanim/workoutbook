@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дневник тренировок</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .user-info {
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .auth-container {
+            max-width: 400px;
+            margin: 100px auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .workout-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .workout-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.1);
+        }
+
+        .exercise-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .exercise-stats {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .progress-chart {
+            height: 300px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .records-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .record-card {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .workout-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- Форма авторизации -->
+<div id="auth-container" class="auth-container">
+    <div class="card">
+        <h2 id="auth-title">Вход в систему</h2>
+        <form id="auth-form">
+            <div class="form-group hidden" id="email-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="username">Имя пользователя:</label>
+                <input type="text" id="username" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Пароль:</label>
+                <input type="password" id="password" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary" style="width: 100%;" id="auth-submit">Войти</button>
+            </div>
+            <div class="form-group">
+                <button type="button" class="btn btn-secondary" style="width: 100%;" id="auth-toggle">Регистрация</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Основное приложение -->
+<div id="app-container" class="container hidden">
+    <div class="header">
+        <h1>💪 Дневник тренировок</h1>
+        <div class="user-info">
+            <span id="user-name">Пользователь</span>
+            <button class="btn btn-secondary btn-small" id="logout-btn">Выйти</button>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" data-tab="workouts">Тренировки</button>
+        <button class="tab" data-tab="exercises">Упражнения</button>
+        <button class="tab" data-tab="records">Рекорды</button>
+        <button class="tab" data-tab="progress">Прогресс</button>
+    </div>
+
+    <!-- Вкладка тренировок -->
+    <div id="workouts-tab" class="tab-content active">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3>Мои тренировки</h3>
+                <button class="btn btn-primary" id="create-workout-btn">Создать тренировку</button>
+            </div>
+            <div id="workouts-list">
+                <p>Загрузка тренировок...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Вкладка упражнений -->
+    <div id="exercises-tab" class="tab-content">
+        <div class="card">
+            <h3>Доступные упражнения</h3>
+            <div style="margin-bottom: 20px;">
+                <select id="exercise-type-filter" class="form-control" style="max-width: 200px;">
+                    <option value="">Все упражнения</option>
+                    <option value="strength">Силовые</option>
+                    <option value="cardio">Кардио</option>
+                </select>
+            </div>
+            <div id="exercises-list">
+                <p>Загрузка упражнений...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Вкладка рекордов -->
+    <div id="records-tab" class="tab-content">
+        <div class="card">
+            <h3>Личные рекорды</h3>
+            <div id="records-list">
+                <p>Загрузка рекордов...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Вкладка прогресса -->
+    <div id="progress-tab" class="tab-content">
+        <div class="card">
+            <h3>Прогресс тренировок</h3>
+            <div class="form-group">
+                <label for="progress-exercise">Выберите упражнение:</label>
+                <select id="progress-exercise" class="form-control">
+                    <option value="">Выберите упражнение</option>
+                </select>
+            </div>
+            <div id="progress-chart" class="progress-chart">
+                <p>Выберите упражнение для просмотра прогресса</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно создания тренировки -->
+<div id="workout-modal" class="modal">
+    <div class="modal-content">
+        <h3>Создать тренировку</h3>
+        <form id="workout-form">
+            <div class="form-group">
+                <label for="workout-name">Название тренировки:</label>
+                <input type="text" id="workout-name" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="workout-date">Дата:</label>
+                <input type="datetime-local" id="workout-date" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="workout-notes">Заметки:</label>
+                <textarea id="workout-notes" class="form-control" rows="3"></textarea>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-primary">Создать</button>
+                <button type="button" class="btn btn-secondary" id="close-workout-modal">Отмена</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Модальное окно добавления упражнения -->
+<div id="exercise-modal" class="modal">
+    <div class="modal-content">
+        <h3>Добавить упражнение</h3>
+        <form id="exercise-form">
+            <div class="form-group">
+                <label for="exercise-select">Упражнение:</label>
+                <select id="exercise-select" class="form-control" required>
+                    <option value="">Выберите упражнение</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="sets">Подходы:</label>
+                <input type="number" id="sets" class="form-control" min="1" value="3">
+            </div>
+            <div id="strength-fields">
+                <div class="form-group">
+                    <label for="reps">Повторения:</label>
+                    <input type="number" id="reps" class="form-control" min="1" value="10">
+                </div>
+                <div class="form-group">
+                    <label for="weight">Вес (кг):</label>
+                    <input type="number" id="weight" class="form-control" min="0" step="0.5" value="0">
+                </div>
+            </div>
+            <div id="cardio-fields" class="hidden">
+                <div class="form-group">
+                    <label for="duration">Длительность (мин):</label>
+                    <input type="number" id="duration" class="form-control" min="1" value="30">
+                </div>
+                <div class="form-group">
+                    <label for="distance">Расстояние (км):</label>
+                    <input type="number" id="distance" class="form-control" min="0" step="0.1" value="0">
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-success">Добавить</button>
+                <button type="button" class="btn btn-secondary" id="close-exercise-modal">Отмена</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Глобальные переменные
+    let authToken = localStorage.getItem('auth_token');
+    let currentUser = JSON.parse(localStorage.getItem('current_user') || '{}');
+    let currentWorkoutId = null;
+    let exercises = [];
+
+    // API базовый URL
+    const API_BASE = '/api';
+
+    // Утилитные функции
+    function showAlert(message, type = 'success') {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type}`;
+        alertDiv.textContent = message;
+
+        const container = document.querySelector('.container') || document.body;
+        container.insertBefore(alertDiv, container.firstChild);
+
+        setTimeout(() => alertDiv.remove(), 5000);
+    }
+
+    function formatDate(dateString) {
+        return new Date(dateString).toLocaleDateString('ru-RU', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    async function apiRequest(endpoint, options = {}) {
+        const url = `${API_BASE}${endpoint}`;
+        const config = {
+            headers: {
+                'Content-Type': 'application/json',
+                ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+            },
+            ...options
+        };
+
+        try {
+            const response = await fetch(url, config);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Ошибка запроса');
+            }
+
+            return data;
+        } catch (error) {
+            console.error('API Error:', error);
+            throw error;
+        }
+    }
+
+    // Аутентификация
+    function initAuth() {
+        if (authToken && currentUser.id) {
+            showApp();
+        } else {
+            showAuth();
+        }
+    }
+
+    function showAuth() {
+        document.getElementById('auth-container').classList.remove('hidden');
+        document.getElementById('app-container').classList.add('hidden');
+    }
+
+    function showApp() {
+        document.getElementById('auth-container').classList.add('hidden');
+        document.getElementById('app-container').classList.remove('hidden');
+        document.getElementById('user-name').textContent = currentUser.username;
+        loadData();
+    }
+
+    // Обработчики форм
+    document.getElementById('auth-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const isLogin = document.getElementById('auth-submit').textContent === 'Войти';
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const email = document.getElementById('email').value;
+
+        try {
+            if (isLogin) {
+                const result = await apiRequest('/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password })
+                });
+
+                authToken = result.token;
+                currentUser = result.user;
+                localStorage.setItem('auth_token', authToken);
+                localStorage.setItem('current_user', JSON.stringify(currentUser));
+                showApp();
+            } else {
+                await apiRequest('/register', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, email, password })
+                });
+                showAlert('Регистрация успешна! Теперь войдите в систему.');
+                toggleAuthMode();
+            }
+        } catch (error) {
+            showAlert(error.message, 'error');
+        }
+    });
+
+    document.getElementById('auth-toggle').addEventListener('click', toggleAuthMode);
+
+    function toggleAuthMode() {
+        const isLogin = document.getElementById('auth-submit').textContent === 'Войти';
+
+        if (isLogin) {
+            document.getElementById('auth-title').textContent = 'Регистрация';
+            document.getElementById('auth-submit').textContent = 'Зарегистрироваться';
+            document.getElementById('auth-toggle').textContent = 'Вход';
+            document.getElementById('email-group').classList.remove('hidden');
+        } else {
+            document.getElementById('auth-title').textContent = 'Вход в систему';
+            document.getElementById('auth-submit').textContent = 'Войти';
+            document.getElementById('auth-toggle').textContent = 'Регистрация';
+            document.getElementById('email-group').classList.add('hidden');
+        }
+    }
+
+    // Выход из системы
+    document.getElementById('logout-btn').addEventListener('click', () => {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('current_user');
+        authToken = null;
+        currentUser = {};
+        showAuth();
+    });
+
+    // Управление вкладками
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabName = tab.dataset.tab;
+
+            // Переключение активной вкладки
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+
+            tab.classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+
+            // Загрузка данных для вкладки
+            if (tabName === 'exercises') {
+                loadExercises();
+            } else if (tabName === 'records') {
+                loadPersonalRecords();
+            } else if (tabName === 'progress') {
+                loadProgressExercises();
+            }
+        });
+    });
+
+    // Загрузка данных
+    async function loadData() {
+        await loadWorkouts();
+        await loadExercises();
+    }
+
+    async function loadWorkouts() {
+        try {
+            const workouts = await apiRequest('/workouts');
+            displayWorkouts(workouts);
+        } catch (error) {
+            document.getElementById('workouts-list').innerHTML = `<p>Ошибка загрузки: ${error.message}</p>`;
+        }
+    }
+
+    function displayWorkouts(workouts) {
+        const container = document.getElementById('workouts-list');
+
+        if (workouts.length === 0) {
+            container.innerHTML = '<p>У вас пока нет тренировок. Создайте первую!</p>';
+            return;
+        }
+
+        container.innerHTML = workouts.map(workout => `
+                <div class="workout-item">
+                    <div>
+                        <h4>${workout.name}</h4>
+                        <p>${formatDate(workout.date)}</p>
+                        ${workout.notes ? `<p><em>${workout.notes}</em></p>` : ''}
+                    </div>
+                    <div>
+                        <button class="btn btn-success btn-small" onclick="viewWorkout(${workout.id})">Подробнее</button>
+                    </div>
+                </div>
+            `).join('');
+    }
+
+    async function loadExercises() {
+        try {
+            const type = document.getElementById('exercise-type-filter')?.value || '';
+            const url = type ? `/exercises?type=${type}` : '/exercises';
+            exercises = await apiRequest(url);
+            displayExercises(exercises);
+            updateExerciseSelects();
+        } catch (error) {
+            document.getElementById('exercises-list').innerHTML = `<p>Ошибка загрузки: ${error.message}</p>`;
+        }
+    }
+
+    function displayExercises(exercisesList) {
+        const container = document.getElementById('exercises-list');
+
+        if (exercisesList.length === 0) {
+            container.innerHTML = '<p>Упражнения не найдены.</p>';
+            return;
+        }
+
+        const grouped = exercisesList.reduce((acc, exercise) => {
+            const group = exercise.muscle_group || 'Другое';
+            if (!acc[group]) acc[group] = [];
+            acc[group].push(exercise);
+            return acc;
+        }, {});
+
+        container.innerHTML = Object.entries(grouped).map(([group, exs]) => `
+                <div style="margin-bottom: 25px;">
+                    <h4 style="color: #667eea; margin-bottom: 15px;">${group}</h4>
+                    ${exs.map(exercise => `
+                        <div class="exercise-item">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div style="flex: 1;">
+                                    <h5>${exercise.name}</h5>
+                                    <p style="margin: 5px 0; color: #666;">${exercise.description}</p>
+                                    <span style="background: ${exercise.type === 'strength' ? '#28a745' : '#17a2b8'}; color: white; padding: 3px 8px; border-radius: 12px; font-size: 12px;">
+                                        ${exercise.type === 'strength' ? 'Силовое' : 'Кардио'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `).join('');
+    }
+
+    function updateExerciseSelects() {
+        const selects = ['exercise-select', 'progress-exercise'];
+
+        selects.forEach(selectId => {
+            const select = document.getElementById(selectId);
+            if (select) {
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">Выберите упражнение</option>' +
+                    exercises.map(ex => `<option value="${ex.id}" data-type="${ex.type}">${ex.name}</option>`).join('');
+                select.value = currentValue;
+            }
+        });
+    }
+
+    // Обработчик фильтра упражнений
+    document.getElementById('exercise-type-filter').addEventListener('change', loadExercises);
+
+    // Создание тренировки
+    document.getElementById('create-workout-btn').addEventListener('click', () => {
+        document.getElementById('workout-date').value = new Date().toISOString().slice(0, 16);
+        document.getElementById('workout-modal').classList.add('show');
+    });
+
+    document.getElementById('close-workout-modal').addEventListener('click', () => {
+        document.getElementById('workout-modal').classList.remove('show');
+    });
+
+    document.getElementById('workout-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const workoutData = {
+            name: document.getElementById('workout-name').value,
+            date: new Date(document.getElementById('workout-date').value).toISOString(),
+            notes: document.getElementById('workout-notes').value
+        };
+
+        try {
+            await apiRequest('/workouts', {
+                method: 'POST',
+                body: JSON.stringify(workoutData)
+            });
+
+            showAlert('Тренировка создана успешно!');
+            document.getElementById('workout-modal').classList.remove('show');
+            document.getElementById('workout-form').reset();
+            loadWorkouts();
+        } catch (error) {
+            showAlert(error.message, 'error');
+        }
+    });
+
+    // Просмотр тренировки
+    async function viewWorkout(workoutId) {
+        currentWorkoutId = workoutId;
+
+        try {
+            const data = await apiRequest(`/workouts/${workoutId}`);
+            displayWorkoutDetails(data.workout, data.exercises);
+        } catch (error) {
+            showAlert(error.message, 'error');
+        }
+    }
+
+    function displayWorkoutDetails(workout, workoutExercises) {
+        const container = document.getElementById('workouts-list');
+
+        container.innerHTML = `
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div>
+                            <h3>${workout.name}</h3>
+                            <p>${formatDate(workout.date)}</p>
+                            ${workout.notes ? `<p><em>${workout.notes}</em></p>` : ''}
+                        </div>
+                        <div>
+                            <button class="btn btn-primary btn-small" onclick="showAddExerciseModal()">Добавить упражнение</button>
+                            <button class="btn btn-secondary btn-small" onclick="loadWorkouts()">Назад</button>
+                        </div>
+                    </div>
+
+                    <h4>Упражнения:</h4>
+                    <div id="workout-exercises">
+                        ${workoutExercises.length === 0 ?
+            '<p>В этой тренировке пока нет упражнений.</p>' :
+            workoutExercises.map(we => `
+                                <div class="exercise-item">
+                                    <h5>${we.exercise.name}</h5>
+                                    <div class="exercise-stats">
+                                        ${we.exercise.type === 'strength' ? `
+                                            <div class="stat-item">Подходы: ${we.sets}</div>
+                                            <div class="stat-item">Повторения: ${we.reps}</div>
+                                            <div class="stat-item">Вес: ${we.weight} кг</div>
+                                        ` : `
+                                            <div class="stat-item">Время: ${Math.floor(we.duration / 60)} мин</div>
+                                            ${we.distance > 0 ? `<div class="stat-item">Расстояние: ${we.distance} км</div>` : ''}
+                                        `}
+                                    </div>
+                                </div>
+                            `).join('')
+        }
+                    </div>
+                </div>
+            `;
+    }
+
+    // Добавление упражнения в тренировку
+    function showAddExerciseModal() {
+        updateExerciseSelects();
+        document.getElementById('exercise-modal').classList.add('show');
+    }
+
+    document.getElementById('close-exercise-modal').addEventListener('click', () => {
+        document.getElementById('exercise-modal').classList.remove('show');
+    });
+
+    // Переключение полей в зависимости от типа упражнения
+    document.getElementById('exercise-select').addEventListener('change', (e) => {
+        const selectedOption = e.target.options[e.target.selectedIndex];
+        const exerciseType = selectedOption.dataset.type;
+
+        if (exerciseType === 'cardio') {
+            document.getElementById('strength-fields').classList.add('hidden');
+            document.getElementById('cardio-fields').classList.remove('hidden');
+        } else {
+            document.getElementById('strength-fields').classList.remove('hidden');
+            document.getElementById('cardio-fields').classList.add('hidden');
+        }
+    });
+
+    document.getElementById('exercise-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const selectedOption = document.getElementById('exercise-select').options[document.getElementById('exercise-select').selectedIndex];
+        const exerciseType = selectedOption.dataset.type;
+
+        const exerciseData = {
+            exercise_id: parseInt(document.getElementById('exercise-select').value),
+            sets: parseInt(document.getElementById('sets').value)
+        };
+
+        if (exerciseType === 'strength') {
+            exerciseData.reps = parseInt(document.getElementById('reps').value);
+            exerciseData.weight = parseFloat(document.getElementById('weight').value);
+            exerciseData.duration = 0;
+            exerciseData.distance = 0;
+        } else {
+            exerciseData.reps = 0;
+            exerciseData.weight = 0;
+            exerciseData.duration = parseInt(document.getElementById('duration').value) * 60; // в секундах
+            exerciseData.distance = parseFloat(document.getElementById('distance').value);
+        }
+
+        try {
+            await apiRequest(`/workouts/${currentWorkoutId}/exercises`, {
+                method: 'POST',
+                body: JSON.stringify(exerciseData)
+            });
+
+            showAlert('Упражнение добавлено!');
+            document.getElementById('exercise-modal').classList.remove('show');
+            document.getElementById('exercise-form').reset();
+            viewWorkout(currentWorkoutId); // Обновить детали тренировки
+        } catch (error) {
+            showAlert(error.message, 'error');
+        }
+    });
+
+    // Личные рекорды
+    async function loadPersonalRecords() {
+        try {
+            const records = await apiRequest('/records');
+            displayPersonalRecords(records);
+        } catch (error) {
+            document.getElementById('records-list').innerHTML = `<p>Ошибка загрузки: ${error.message}</p>`;
+        }
+    }
+
+    function displayPersonalRecords(records) {
+        const container = document.getElementById('records-list');
+
+        if (records.length === 0) {
+            container.innerHTML = '<p>У вас пока нет личных рекордов. Добавьте упражнения в тренировки!</p>';
+            return;
+        }
+
+        container.innerHTML = `
+                <div class="records-grid">
+                    ${records.map(record => `
+                        <div class="record-card">
+                            <h4>${record.exercise.name}</h4>
+                            <div style="font-size: 2em; margin: 10px 0;">
+                                ${record.weight}кг × ${record.reps}
+                            </div>
+                            <p>Установлен: ${formatDate(record.date)}</p>
+                            <small>Расчетный 1RM: ${(record.weight * (1 + record.reps / 30)).toFixed(1)}кг</small>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+    }
+
+    // Прогресс
+    async function loadProgressExercises() {
+        updateExerciseSelects();
+    }
+
+    document.getElementById('progress-exercise').addEventListener('change', async (e) => {
+        const exerciseId = e.target.value;
+        if (!exerciseId) {
+            document.getElementById('progress-chart').innerHTML = '<p>Выберите упражнение для просмотра прогресса</p>';
+            return;
+        }
+
+        try {
+            const progress = await apiRequest(`/progress?exercise_id=${exerciseId}`);
+            displayProgress(progress);
+        } catch (error) {
+            document.getElementById('progress-chart').innerHTML = `<p>Ошибка загрузки прогресса: ${error.message}</p>`;
+        }
+    });
+
+    function displayProgress(progressData) {
+        const container = document.getElementById('progress-chart');
+
+        if (progressData.length === 0) {
+            container.innerHTML = '<p>Нет данных для отображения прогресса по этому упражнению</p>';
+            return;
+        }
+
+        // Простая визуализация прогресса
+        const maxWeight = Math.max(...progressData.map(p => p.weight));
+        const chartHtml = progressData.map((point, index) => {
+            const height = (point.weight / maxWeight) * 200;
+            const date = new Date(point.date).toLocaleDateString('ru-RU');
+
+            return `
+                    <div style="display: inline-block; margin: 0 5px; text-align: center;">
+                        <div style="height: 200px; display: flex; align-items: end;">
+                            <div style="
+                                background: linear-gradient(to top, #667eea, #764ba2);
+                                width: 30px;
+                                height: ${height}px;
+                                border-radius: 3px 3px 0 0;
+                            "></div>
+                        </div>
+                        <div style="font-size: 12px; margin-top: 5px;">
+                            <div>${point.weight}кг</div>
+                            <div>${date}</div>
+                        </div>
+                    </div>
+                `;
+        }).join('');
+
+        container.innerHTML = `
+                <div style="padding: 20px; text-align: center;">
+                    <h4 style="margin-bottom: 20px;">Прогресс по весу</h4>
+                    <div style="display: flex; justify-content: center; align-items: end; overflow-x: auto;">
+                        ${chartHtml}
+                    </div>
+                </div>
+            `;
+    }
+
+    // Закрытие модальных окон по клику вне их
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('show');
+            }
+        });
+    });
+
+    // Инициализация приложения
+    document.addEventListener('DOMContentLoaded', () => {
+        initAuth();
+    });
+</script>
+</body>
+</html>
