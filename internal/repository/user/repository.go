@@ -9,6 +9,7 @@ import (
 	"github.com/biryanim/workoutbook/internal/model"
 	"github.com/biryanim/workoutbook/internal/repository"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pkg/errors"
 )
 
@@ -39,7 +40,11 @@ func (r *repo) Create(ctx context.Context, user *model.CreateUserParams) (int64,
 	var id int64
 	err = r.db.DB().QueryRowContext(ctx, query, args...).Scan(&id)
 	if err != nil {
-		return 0, fmt.Errorf("failed to execute query: %w", err)
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return 0, apperrors.ErrUserAlreadyExists
+		}
+		return 0, fmt.Errorf("failed to create query: %w", err)
 	}
 
 	return id, nil
