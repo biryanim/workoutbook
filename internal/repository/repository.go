@@ -14,5 +14,8 @@ type UserRepository interface {
 type WorkoutRepository interface {
 	CreateWorkout(ctx context.Context, workout *model.Workout) (int64, error)
 	GetWorkoutByID(ctx context.Context, workoutID, userId int64) (*model.Workout, error)
-	ListWorkouts(ctx context.Context, filter *model.WorkoutsFilter) ([]*model.Workout, error)
+	ListWorkouts(ctx context.Context, userId int64, filter *model.WorkoutsFilter) ([]*model.Workout, error)
+	AddWorkoutExercise(ctx context.Context, we *model.WorkoutExercise) (int64, error)
+	GetExercisesByWorkoutID(ctx context.Context, workoutID int64) ([]*model.WorkoutExercise, error)
+	IsUserHaveWorkout(ctx context.Context, userId, workoutId int64) (bool, error)
 }

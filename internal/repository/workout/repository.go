@@ -28,7 +28,7 @@ func NewRepository(db db.Client) *repo {
 	}
 }
 
-func (r *repo) Create(ctx context.Context, workout *model.Workout) (int64, error) {
+func (r *repo) CreateWorkout(ctx context.Context, workout *model.Workout) (int64, error) {
 	query, args, err := r.qb.
 		Insert("workouts").
 		Columns("user_id", "date", "name", "notes").
@@ -76,11 +76,12 @@ func (r *repo) GetWorkoutByID(ctx context.Context, workoutID, userId int64) (*mo
 	return nil, fmt.Errorf("failed to get workout by ID: %w", err)
 }
 
-func (r *repo) ListWorkouts(ctx context.Context, filter *model.WorkoutsFilter) ([]*model.Workout, error) {
+func (r *repo) ListWorkouts(ctx context.Context, userId int64, filter *model.WorkoutsFilter) ([]*model.Workout, error) {
 	builder := r.qb.Select("id", "user_id", "date", "notes", "name", "created_at", "updated_at").
 		From("workouts").
+		Where(squirrel.Eq{"user_id": userId}).
 		OrderBy(
-			"created_at",
+			"date DESC",
 		).
 		Limit(filter.Limit).
 		Offset(filter.Offset)
@@ -127,4 +128,66 @@ func (r *repo) ListWorkouts(ctx context.Context, filter *model.WorkoutsFilter) (
 	}
 
 	return workouts, nil
+}
+
+func (r *repo) AddWorkoutExercise(ctx context.Context, we *model.WorkoutExercise) (int64, error) {
+	query, args, err := r.qb.Insert("workout_exercises").
+		Columns("workout_id", "exercise_id", "sets", "reps", "weight", "duration", "distance").
+		Values(we.WorkoutID, we.ExerciseID, we.Sets, we.Reps, we.Weight, we.Duration, we.Distance).
+		Suffix("RETURNING id").ToSql()
+
+	if err != nil {
+		return 0, fmt.Errorf("failed to build insert query: %w", err)
+	}
+
+	var id int64
+	err = r.db.DB().QueryRowContext(ctx, query, args...).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("failed to insert workout: %w", err)
+	}
+
+	return id, nil
+}
+
+func (r *repo) GetExercisesByWorkoutID(ctx context.Context, workoutID int64) ([]*model.WorkoutExercise, error) {
+	query, args, err := r.qb.
+		Select("we.id", "we.workout_id", "we.exercise_id", "we.sets", "we.reps", "we.weight", "we.duration", "we.distance", "e.name", "e.type", "e.muscle_group", "e.description").
+		From("workout_exercises we").
+		Join("exercises e ON we.exercise_id = e.id").
+		Where(squirrel.Eq{"we.workout_id": workoutID}).ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build select query: %w", err)
+	}
+
+	rows, err := r.db.DB().QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list workouts: %w", err)
+	}
+	defer rows.Close()
+
+	var exercises []*model.WorkoutExercise
+	for rows.Next() {
+		var exercise model.WorkoutExercise
+		err = rows.Scan(
+			&exercise.ID,
+			&exercise.WorkoutID,
+			&exercise.ExerciseID,
+			&exercise.Sets,
+			&exercise.Reps,
+			&exercise.Weight,
+			&exercise.Duration,
+			&exercise.Distance,
+			&exercise.Exercise.Name,
+			&exercise.Exercise.Type,
+			&exercise.Exercise.MuscleGroup,
+			&exercise.Exercise.Description,
+		)
+
+		exercises = append(exercises, &exercise)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate workouts: %w", err)
+	}
+
+	return exercises, nil
 }

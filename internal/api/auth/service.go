@@ -80,7 +80,7 @@ func (i *Implementation) AuthMiddleware() gin.HandlerFunc {
 		}
 
 		token = strings.TrimPrefix(token, auth)
-		access, err := i.authService.Check(c.Request.Context(), token)
+		userId, access, err := i.authService.Check(c.Request.Context(), token)
 		if err != nil || !access {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"code":    http.StatusUnauthorized,
@@ -89,7 +89,7 @@ func (i *Implementation) AuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-
+		c.Set("userID", userId)
 		c.Next()
 	}
 }

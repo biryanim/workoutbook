@@ -2,11 +2,11 @@ package auth
 
 import "context"
 
-func (s *serv) Check(ctx context.Context, token string) (bool, error) {
-	_, err := verifyToken(token, s.jwtConfig.TokenSecret())
+func (s *serv) Check(ctx context.Context, token string) (int64, bool, error) {
+	claims, err := verifyToken(token, s.jwtConfig.TokenSecret())
 	if err != nil {
-		return false, err
+		return 0, false, err
 	}
 
-	return true, nil
+	return claims.UserID, true, nil
 }

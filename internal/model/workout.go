@@ -17,8 +17,8 @@ type Workout struct {
 
 type WorkoutSet struct {
 	ID         int64
-	WorkoutID  int
-	ExerciseID int
+	WorkoutID  int64
+	ExerciseID int64
 }
 
 type WorkoutsFilter struct {
@@ -26,4 +26,29 @@ type WorkoutsFilter struct {
 	EndDate   time.Time
 	Offset    uint64
 	Limit     uint64
+}
+
+type WorkoutExercise struct {
+	ID         int64
+	WorkoutID  int64
+	ExerciseID int64
+	Sets       int
+	Reps       int
+	Weight     float64
+	Duration   int
+	Distance   float64
+	Exercise   Exercise
+}
+
+type Exercise struct {
+	ID          int64
+	Name        string
+	Type        string
+	MuscleGroup string
+	Description string
+}
+
+type WorkoutExercises struct {
+	Workout   *Workout
+	Exercises []*WorkoutExercise
 }
