@@ -41,7 +41,7 @@ func (i *Implementation) Register(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"user id": resp,
+		"user_id": resp,
 	})
 }
 
@@ -54,7 +54,7 @@ func (i *Implementation) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := i.authService.Login(c.Request.Context(), converter.FromUserLoginRequest(&loginReq))
+	user, err := i.authService.Login(c.Request.Context(), converter.FromUserLoginRequest(&loginReq))
 	if err != nil {
 		fmt.Println(err)
 		appErr := apperrors.FromError(err)
@@ -63,7 +63,8 @@ func (i *Implementation) Login(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"token": token,
+		"token": user.Token,
+		"user":  user.Username,
 	})
 }
 
@@ -89,7 +90,7 @@ func (i *Implementation) AuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		c.Set("userID", userId)
+		c.Set("user_id", userId)
 		c.Next()
 	}
 }

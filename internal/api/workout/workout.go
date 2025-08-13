@@ -46,7 +46,6 @@ func (i *Implementation) GetWorkout(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
-
 	workout, err := i.workoutService.GetWorkout(c.Request.Context(), userID, workoutID)
 	if err != nil {
 		fmt.Println(err)
@@ -54,8 +53,9 @@ func (i *Implementation) GetWorkout(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": appErr.Error()})
 		return
 	}
+	fmt.Println(workout.Workout)
 	resp := converter.ToGetWorkoutResp(workout)
-
+	fmt.Println(resp)
 	c.JSON(http.StatusOK, resp)
 }
 
@@ -83,9 +83,7 @@ func (i *Implementation) ListWorkouts(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"workouts": converter.ToWorkoutsResp(workouts),
-	})
+	c.JSON(http.StatusOK, converter.ToWorkoutsResp(workouts))
 }
 
 func (i *Implementation) AddExerciseToWorkout(c *gin.Context) {
@@ -112,4 +110,18 @@ func (i *Implementation) AddExerciseToWorkout(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"workout_id": workoutID})
+}
+
+func (i *Implementation) ListExercises(c *gin.Context) {
+	exerciseType := c.Query("type")
+
+	exercises, err := i.workoutService.GetExercises(c.Request.Context(), exerciseType)
+	if err != nil {
+		fmt.Println(err)
+		appErr := apperrors.FromError(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": appErr.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, converter.ToListExercisesResp(exercises))
 }

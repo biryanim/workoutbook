@@ -231,9 +231,26 @@
         }
 
         .alert {
-            padding: 12px 15px;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
             border-radius: 8px;
-            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 10000;
+            max-width: 400px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
         .alert-success {
@@ -296,6 +313,12 @@
                 align-items: flex-start;
                 gap: 10px;
             }
+
+            .alert {
+                right: 10px;
+                left: 10px;
+                max-width: none;
+            }
         }
     </style>
 </head>
@@ -305,11 +328,11 @@
     <div class="card">
         <h2 id="auth-title">Вход в систему</h2>
         <form id="auth-form">
-            <div class="form-group hidden" id="email-group">
+            <div class="form-group">
                 <label for="email">Email:</label>
                 <input type="email" id="email" class="form-control" required>
             </div>
-            <div class="form-group">
+            <div class="form-group hidden" id="username-group">
                 <label for="username">Имя пользователя:</label>
                 <input type="text" id="username" class="form-control" required>
             </div>
@@ -543,7 +566,7 @@
     function showApp() {
         document.getElementById('auth-container').classList.add('hidden');
         document.getElementById('app-container').classList.remove('hidden');
-        document.getElementById('user-name').textContent = currentUser.username;
+        document.getElementById('user-name').textContent = currentUser;
         loadData();
     }
 
@@ -560,7 +583,7 @@
             if (isLogin) {
                 const result = await apiRequest('/login', {
                     method: 'POST',
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({ email, password })
                 });
 
                 authToken = result.token;
@@ -780,6 +803,7 @@
 
     function displayWorkoutDetails(workout, workoutExercises) {
         const container = document.getElementById('workouts-list');
+        const exercises = workoutExercises || []; // Если workoutExercises null/undefined, используем пустой массив
 
         container.innerHTML = `
                 <div class="card">
@@ -797,9 +821,9 @@
 
                     <h4>Упражнения:</h4>
                     <div id="workout-exercises">
-                        ${workoutExercises.length === 0 ?
+                        ${exercises.length === 0 ?
             '<p>В этой тренировке пока нет упражнений.</p>' :
-            workoutExercises.map(we => `
+            exercises.map(we => `
                                 <div class="exercise-item">
                                     <h5>${we.exercise.name}</h5>
                                     <div class="exercise-stats">

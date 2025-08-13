@@ -4,12 +4,15 @@ import (
 	"context"
 	"fmt"
 	authImpl "github.com/biryanim/workoutbook/internal/api/auth"
+	workoutImpl "github.com/biryanim/workoutbook/internal/api/workout"
 	"github.com/biryanim/workoutbook/internal/client/db/pg"
 	"github.com/biryanim/workoutbook/internal/client/db/transaction"
 	"github.com/biryanim/workoutbook/internal/config"
 	"github.com/biryanim/workoutbook/internal/config/env"
 	userRepo "github.com/biryanim/workoutbook/internal/repository/user"
+	workoutRepo "github.com/biryanim/workoutbook/internal/repository/workout"
 	"github.com/biryanim/workoutbook/internal/service/auth"
+	"github.com/biryanim/workoutbook/internal/service/workout"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -49,14 +52,27 @@ func main() {
 
 	txManager := transaction.NewTransactionManager(dbClient.DB())
 	userRepository := userRepo.NewRepository(dbClient)
+	workoutRepository := workoutRepo.NewRepository(dbClient)
 	authService := auth.NewService(userRepository, txManager, jwtConfig)
+	workoutService := workout.New(workoutRepository, txManager)
 	authImpl := authImpl.NewImplementation(authService)
+	workoutImpl := workoutImpl.NewImplementation(workoutService)
 
 	r := gin.Default()
 	public := r.Group("/api")
 	{
 		public.POST("/register", authImpl.Register)
 		public.POST("/login", authImpl.Login)
+	}
+	protected := r.Group("/api")
+	protected.Use(authImpl.AuthMiddleware())
+	{
+		protected.GET("/exercises", workoutImpl.ListExercises)
+
+		protected.POST("/workouts", workoutImpl.CreateWorkout)
+		protected.GET("/workouts", workoutImpl.ListWorkouts)
+		protected.GET("/workouts/:id", workoutImpl.GetWorkout)
+		protected.POST("/workouts/:id/exercises", workoutImpl.AddExerciseToWorkout)
 	}
 
 	r.Static("/static", "./static")

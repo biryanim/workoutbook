@@ -53,7 +53,7 @@ func ToGetWorkoutResp(w *model.WorkoutExercises) *dto.WorkoutExercises {
 		exercises = append(exercises, dtoEx)
 	}
 
-	workout := &dto.Workout{
+	workout := dto.Workout{
 		ID:   w.Workout.ID,
 		Date: w.Workout.Date,
 		Name: w.Workout.Name,
@@ -152,4 +152,20 @@ func FromAddExerciseToWorkout(d *dto.WorkoutExercise) *model.WorkoutExercise {
 			Description: d.Exercise.Description,
 		},
 	}
+}
+func ToListExercisesResp(exercises []*model.Exercise) []*dto.Exercise {
+	var wrks []*dto.Exercise
+	for _, ex := range exercises {
+		e := &dto.Exercise{
+			ID:          ex.ID,
+			Name:        ex.Name,
+			Type:        ex.Type,
+			MuscleGroup: ex.MuscleGroup,
+			Description: ex.Description,
+		}
+
+		wrks = append(wrks, e)
+	}
+
+	return wrks
 }

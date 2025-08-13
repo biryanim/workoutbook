@@ -73,7 +73,7 @@ func (r *repo) GetWorkoutByID(ctx context.Context, workoutID, userId int64) (*mo
 			return nil, apperrors.ErrTaskNotFound
 		}
 	}
-	return nil, fmt.Errorf("failed to get workout by ID: %w", err)
+	return &workout, nil
 }
 
 func (r *repo) ListWorkouts(ctx context.Context, userId int64, filter *model.WorkoutsFilter) ([]*model.Workout, error) {
@@ -185,6 +185,66 @@ func (r *repo) GetExercisesByWorkoutID(ctx context.Context, workoutID int64) ([]
 
 		exercises = append(exercises, &exercise)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate workouts: %w", err)
+	}
+
+	return exercises, nil
+}
+
+func (r *repo) IsUserHaveWorkout(ctx context.Context, userId, workoutId int64) (bool, error) {
+	query, args, err := r.qb.
+		Select("count(*)").
+		From("workouts").
+		Where(squirrel.Eq{"id": workoutId, "user_id": userId}).ToSql()
+	if err != nil {
+		return false, fmt.Errorf("failed to build select query: %w", err)
+	}
+
+	var count int
+	err = r.db.DB().QueryRowContext(ctx, query, args...).Scan(&count)
+	if err != nil {
+		return false, fmt.Errorf("failed to check if workout is have: %w", err)
+	}
+
+	return count > 0, nil
+}
+
+func (r *repo) GetExercises(ctx context.Context, exerciseType string) ([]*model.Exercise, error) {
+	builder := r.qb.Select("id", "name", "type", "muscle_group", "description").
+		From("exercises")
+	if exerciseType != "" {
+		builder = builder.Where("type = ?", exerciseType)
+	}
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build select query: %w", err)
+	}
+
+	rows, err := r.db.DB().QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list workouts: %w", err)
+	}
+	defer rows.Close()
+
+	var exercises []*model.Exercise
+
+	for rows.Next() {
+		var exercise model.Exercise
+		err = rows.Scan(
+			&exercise.ID,
+			&exercise.Name,
+			&exercise.Type,
+			&exercise.MuscleGroup,
+			&exercise.Description,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan workout: %w", err)
+		}
+
+		exercises = append(exercises, &exercise)
+	}
+
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("failed to iterate workouts: %w", err)
 	}

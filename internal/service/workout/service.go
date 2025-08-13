@@ -40,12 +40,14 @@ func (s *serv) GetWorkouts(ctx context.Context, userId int64, pagination *model.
 }
 
 func (s *serv) GetWorkout(ctx context.Context, userId, workoutId int64) (*model.WorkoutExercises, error) {
+
 	var (
-		workout *model.WorkoutExercises
+		workout = &model.WorkoutExercises{}
 		err     error
 	)
 
 	err = s.txManager.ReadCommited(ctx, func(ctx context.Context) error {
+
 		workout.Workout, err = s.workoutRepository.GetWorkoutByID(ctx, workoutId, userId)
 		if err != nil {
 			return err
@@ -88,4 +90,13 @@ func (s *serv) AddExerciseToWorkout(ctx context.Context, userId int64, we *model
 	}
 
 	return nil
+}
+
+func (s *serv) GetExercises(ctx context.Context, exerciseType string) ([]*model.Exercise, error) {
+	exrs, err := s.workoutRepository.GetExercises(ctx, exerciseType)
+	if err != nil {
+		return nil, err
+	}
+
+	return exrs, nil
 }

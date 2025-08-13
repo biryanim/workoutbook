@@ -33,3 +33,8 @@ type UserClaims struct {
 	jwt.StandardClaims
 	UserID int64
 }
+
+type UserLoginResp struct {
+	Username string
+	Token    string
+}

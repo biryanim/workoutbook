@@ -30,7 +30,7 @@ type Exercise struct {
 }
 
 type WorkoutExercises struct {
-	Workout   *Workout           `json:"workout"`
+	Workout   Workout            `json:"workout"`
 	Exercises []*WorkoutExercise `json:"exercises"`
 }
 

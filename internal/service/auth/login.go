@@ -9,23 +9,26 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func (s *serv) Login(ctx context.Context, userLogin *model.LoginUserParams) (string, error) {
+func (s *serv) Login(ctx context.Context, userLogin *model.LoginUserParams) (*model.UserLoginResp, error) {
 	user, err := s.userRepository.GetByEmail(ctx, userLogin.Email)
 	if err != nil {
 		if errors.Is(err, apperrors.ErrUserNotFound) {
-			return "", apperrors.ErrInvalidCredentials
+			return nil, apperrors.ErrInvalidCredentials
 		}
-		return "", fmt.Errorf("failed to get auth: %w", err)
+		return nil, fmt.Errorf("failed to get auth: %w", err)
 	}
 
 	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(userLogin.Password)); err != nil {
-		return "", apperrors.ErrInvalidCredentials
+		return nil, apperrors.ErrInvalidCredentials
 	}
 
 	token, err := generateToken(user.ID, s.jwtConfig.TokenSecret(), s.jwtConfig.TokenExpiration())
 	if err != nil {
-		return "", errors.Wrap(err, "failed to generate token")
+		return nil, errors.Wrap(err, "failed to generate token")
 	}
 
-	return token, nil
+	return &model.UserLoginResp{
+		Token:    token,
+		Username: user.Name,
+	}, nil
 }
