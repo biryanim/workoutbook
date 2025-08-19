@@ -73,6 +73,8 @@ func main() {
 		protected.GET("/workouts", workoutImpl.ListWorkouts)
 		protected.GET("/workouts/:id", workoutImpl.GetWorkout)
 		protected.POST("/workouts/:id/exercises", workoutImpl.AddExerciseToWorkout)
+
+		protected.GET("/records", workoutImpl.GetPersonalRecords)
 	}
 
 	r.Static("/static", "./static")

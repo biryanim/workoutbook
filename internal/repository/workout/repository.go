@@ -251,3 +251,90 @@ func (r *repo) GetExercises(ctx context.Context, exerciseType string) ([]*model.
 
 	return exercises, nil
 }
+
+func (r *repo) AddRecord(ctx context.Context, user *model.UserRecord) (int64, error) {
+	query, args, err := r.qb.
+		Insert("personal_records").
+		Columns("user_id", "exercise_id", "weight", "reps", "date").
+		Values(user.UserID, user.ExerciseID, user.Weight, user.Reps, user.Date).
+		ToSql()
+	if err != nil {
+		return 0, fmt.Errorf("failed to build insert query: %w", err)
+	}
+
+	var id int64
+	err = r.db.DB().QueryRowContext(ctx, query, args...).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("failed to insert record: %w", err)
+	}
+
+	return id, nil
+}
+
+func (r *repo) GetPersonalRecord(ctx context.Context, userID, exerciseID int64) (*model.UserRecord, error) {
+	query, args, err := r.qb.
+		Select("weight", "reps").
+		From("personal_records").
+		Where(squirrel.Eq{"user_id": userID, "exercise_id": exerciseID}).ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build select query: %w", err)
+	}
+
+	var record model.UserRecord
+
+	err = r.db.DB().QueryRowContext(ctx, query, args...).Scan(&record.Weight, &record.Reps)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list workouts: %w", err)
+	}
+
+	return &record, nil
+}
+
+func (r *repo) UpdatePersonalRecord(ctx context.Context, user *model.UserRecord) error {
+	query, args, err := r.qb.
+		Update("personal_records").
+		Set("weight", user.Weight).
+		Set("reps", user.Reps).
+		Set("date", user.Date).
+		Where(squirrel.Eq{"user_id": user.UserID, "exercise_id": user.ExerciseID}).ToSql()
+	if err != nil {
+		return fmt.Errorf("failed to build update query: %w", err)
+	}
+
+	_, err = r.db.DB().ExecContext(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("failed to update records: %w", err)
+	}
+	return nil
+}
+
+func (r *repo) ListRecords(ctx context.Context, userId int64) ([]*model.UserRecord, error) {
+	query, args, err := r.qb.
+		Select("pr.id", "pr.exercise_id", "pr.weight", "pr.reps", "pr.date", "e.name", "e.type", "e.muscle_group", "e.description").
+		From("personal_records pr").
+		Join("exercises e ON pr.exercise_id = e.id").
+		Where(squirrel.Eq{"user_id": userId}).OrderBy("pr.date DESC").ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build select query: %w", err)
+	}
+
+	rows, err := r.db.DB().QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list records: %w", err)
+	}
+	defer rows.Close()
+
+	var records []*model.UserRecord
+	for rows.Next() {
+		var record model.UserRecord
+		err = rows.Scan(&record.ID, &record.ExerciseID, &record.Weight, &record.Reps, &record.Date, &record.Exercise.Name, &record.Exercise.Type, &record.Exercise.MuscleGroup, &record.Exercise.Description)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan records: %w", err)
+		}
+		records = append(records, &record)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to list records: %w", err)
+	}
+	return records, nil
+}

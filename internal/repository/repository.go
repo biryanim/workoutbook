@@ -19,4 +19,9 @@ type WorkoutRepository interface {
 	GetExercisesByWorkoutID(ctx context.Context, workoutID int64) ([]*model.WorkoutExercise, error)
 	IsUserHaveWorkout(ctx context.Context, userId, workoutId int64) (bool, error)
 	GetExercises(ctx context.Context, typ string) ([]*model.Exercise, error)
+
+	GetPersonalRecord(ctx context.Context, userID, exerciseID int64) (*model.UserRecord, error)
+	AddRecord(ctx context.Context, user *model.UserRecord) (int64, error)
+	UpdatePersonalRecord(ctx context.Context, user *model.UserRecord) error
+	ListRecords(ctx context.Context, userId int64) ([]*model.UserRecord, error)
 }

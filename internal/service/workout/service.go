@@ -7,6 +7,7 @@ import (
 	"github.com/biryanim/workoutbook/internal/model"
 	"github.com/biryanim/workoutbook/internal/repository"
 	"github.com/biryanim/workoutbook/internal/service"
+	"github.com/jackc/pgx/v5"
 )
 
 var _ service.WorkoutService = (*serv)(nil)
@@ -82,6 +83,11 @@ func (s *serv) AddExerciseToWorkout(ctx context.Context, userId int64, we *model
 			return err
 		}
 
+		err = s.UpdatePersonalRecord(ctx, userId, we.ExerciseID, we.Weight, we.Reps)
+		if err != nil {
+			return err
+		}
+
 		return nil
 	})
 
@@ -99,4 +105,49 @@ func (s *serv) GetExercises(ctx context.Context, exerciseType string) ([]*model.
 	}
 
 	return exrs, nil
+}
+
+func (s *serv) UpdatePersonalRecord(ctx context.Context, userID, exerciseID int64, weight float64, reps int) error {
+	err := s.txManager.ReadCommited(ctx, func(ctx context.Context) error {
+		record, err := s.workoutRepository.GetPersonalRecord(ctx, userID, exerciseID)
+
+		newMax := weight * (1 + float64(reps)/30)
+		currentMax := record.Weight * (1 + float64(record.Reps)/30)
+
+		user := &model.UserRecord{
+			UserID:     userID,
+			ExerciseID: exerciseID,
+			Weight:     weight,
+			Reps:       reps,
+		}
+		if err == pgx.ErrNoRows {
+			_, err = s.workoutRepository.AddRecord(ctx, user)
+			if err != nil {
+				return err
+			}
+			return nil
+		} else if newMax > currentMax {
+			err = s.workoutRepository.UpdatePersonalRecord(ctx, user)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *serv) GetPersonalRecords(ctx context.Context, userId int64) ([]*model.UserRecord, error) {
+	records, err := s.workoutRepository.ListRecords(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	return records, nil
 }

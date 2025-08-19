@@ -125,3 +125,16 @@ func (i *Implementation) ListExercises(c *gin.Context) {
 
 	c.JSON(http.StatusOK, converter.ToListExercisesResp(exercises))
 }
+
+func (i *Implementation) GetPersonalRecords(c *gin.Context) {
+	userID := c.GetInt64("user_id")
+	records, err := i.workoutService.GetPersonalRecords(c.Request.Context(), userID)
+	if err != nil {
+		fmt.Println(err)
+		appErr := apperrors.FromError(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": appErr.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"records": records})
+}

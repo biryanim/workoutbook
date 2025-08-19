@@ -52,3 +52,14 @@ type WorkoutExercises struct {
 	Workout   *Workout
 	Exercises []*WorkoutExercise
 }
+
+type UserRecord struct {
+	ID         int64
+	UserID     int64
+	ExerciseID int64
+	Weight     float64
+	Reps       int
+	Date       time.Time
+	Notes      string
+	Exercise   Exercise
+}
