@@ -40,3 +40,14 @@ type Pagination struct {
 	Limit     string `json:"limit"`
 	Page      string `json:"page"`
 }
+
+type Record struct {
+	ID         int64     `json:"id"`
+	UserID     int64     `json:"user_id"`
+	ExerciseID int64     `json:"exercise_id"`
+	Weight     float64   `json:"weight"`
+	Reps       int       `json:"reps"`
+	Date       time.Time `json:"date"`
+	Notes      string    `json:"notes"`
+	Exercise   Exercise  `json:"exercise"`
+}

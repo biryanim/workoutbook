@@ -3,6 +3,7 @@ package workout
 import (
 	"context"
 	"fmt"
+	"log"
 
 	apperrors "github.com/biryanim/workoutbook/internal/errors"
 
@@ -257,7 +258,7 @@ func (r *repo) AddRecord(ctx context.Context, user *model.UserRecord) (int64, er
 		Insert("personal_records").
 		Columns("user_id", "exercise_id", "weight", "reps", "date").
 		Values(user.UserID, user.ExerciseID, user.Weight, user.Reps, user.Date).
-		ToSql()
+		Suffix("RETURNING id").ToSql()
 	if err != nil {
 		return 0, fmt.Errorf("failed to build insert query: %w", err)
 	}
@@ -272,6 +273,7 @@ func (r *repo) AddRecord(ctx context.Context, user *model.UserRecord) (int64, er
 }
 
 func (r *repo) GetPersonalRecord(ctx context.Context, userID, exerciseID int64) (*model.UserRecord, error) {
+	log.Printf("Getting personal record for user %d, exercise %d", userID, exerciseID)
 	query, args, err := r.qb.
 		Select("weight", "reps").
 		From("personal_records").
@@ -279,6 +281,8 @@ func (r *repo) GetPersonalRecord(ctx context.Context, userID, exerciseID int64) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to build select query: %w", err)
 	}
+
+	log.Printf("Query: %s, Args: %v", query, args)
 
 	var record model.UserRecord
 
@@ -289,6 +293,50 @@ func (r *repo) GetPersonalRecord(ctx context.Context, userID, exerciseID int64) 
 
 	return &record, nil
 }
+
+//func (r *repo) GetPersonalRecord(ctx context.Context, userID, exerciseID int64) (*model.UserRecord, error) {
+//	log.Printf("Getting personal record for user %d, exercise %d", userID, exerciseID)
+//
+//	query, args, err := r.qb.
+//		Select("weight", "reps").
+//		From("personal_records").
+//		Where(squirrel.Eq{"user_id": userID, "exercise_id": exerciseID}).ToSql()
+//	if err != nil {
+//		return nil, fmt.Errorf("failed to build select query: %w", err)
+//	}
+//
+//	log.Printf("Query: %s, Args: %v", query, args)
+//
+//	// КРИТИЧНАЯ ПРОВЕРКА
+//	if r.db == nil {
+//		return nil, fmt.Errorf("database connection is nil")
+//	}
+//
+//	dbInstance := r.db.DB()
+//	if dbInstance == nil {
+//		return nil, fmt.Errorf("database instance is nil")
+//	}
+//
+//	log.Printf("About to call QueryRowContext...")
+//	row := dbInstance.QueryRowContext(ctx, query, args...)
+//	if row == nil {
+//		return nil, fmt.Errorf("QueryRowContext returned nil row")
+//	}
+//
+//	log.Printf("About to call Scan...")
+//	var record model.UserRecord
+//	err = row.Scan(&record.Weight, &record.Reps)
+//	log.Printf("Scan completed, error: %v", err)
+//
+//	if err != nil {
+//		if err == sql.ErrNoRows {
+//			return nil, fmt.Errorf("no personal record found")
+//		}
+//		return nil, fmt.Errorf("failed to get personal record: %w", err)
+//	}
+//
+//	return &record, nil
+//}
 
 func (r *repo) UpdatePersonalRecord(ctx context.Context, user *model.UserRecord) error {
 	query, args, err := r.qb.

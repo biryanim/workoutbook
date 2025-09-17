@@ -136,5 +136,5 @@ func (i *Implementation) GetPersonalRecords(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"records": records})
+	c.JSON(http.StatusOK, converter.ToPersonalRecord(records))
 }

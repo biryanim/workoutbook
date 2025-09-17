@@ -169,3 +169,27 @@ func ToListExercisesResp(exercises []*model.Exercise) []*dto.Exercise {
 
 	return wrks
 }
+
+func ToPersonalRecord(records []*model.UserRecord) []*dto.Record {
+	var rec []*dto.Record
+	for _, record := range records {
+		ex := dto.Exercise{
+			ID:          record.Exercise.ID,
+			Name:        record.Exercise.Name,
+			Type:        record.Exercise.Type,
+			MuscleGroup: record.Exercise.MuscleGroup,
+			Description: record.Exercise.Description,
+		}
+		rec = append(rec, &dto.Record{
+			ID:         record.ID,
+			UserID:     record.UserID,
+			ExerciseID: record.ExerciseID,
+			Weight:     record.Weight,
+			Reps:       record.Reps,
+			Date:       record.Date,
+			Notes:      record.Notes,
+			Exercise:   ex,
+		})
+	}
+	return rec
+}

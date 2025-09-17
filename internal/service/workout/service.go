@@ -110,23 +110,24 @@ func (s *serv) GetExercises(ctx context.Context, exerciseType string) ([]*model.
 func (s *serv) UpdatePersonalRecord(ctx context.Context, userID, exerciseID int64, weight float64, reps int) error {
 	err := s.txManager.ReadCommited(ctx, func(ctx context.Context) error {
 		record, err := s.workoutRepository.GetPersonalRecord(ctx, userID, exerciseID)
-
-		newMax := weight * (1 + float64(reps)/30)
-		currentMax := record.Weight * (1 + float64(record.Reps)/30)
-
 		user := &model.UserRecord{
 			UserID:     userID,
 			ExerciseID: exerciseID,
 			Weight:     weight,
 			Reps:       reps,
 		}
-		if err == pgx.ErrNoRows {
+		if record == nil || err == pgx.ErrNoRows {
 			_, err = s.workoutRepository.AddRecord(ctx, user)
 			if err != nil {
 				return err
 			}
 			return nil
-		} else if newMax > currentMax {
+		}
+
+		newMax := weight * (1 + float64(reps)/30)
+		currentMax := record.Weight * (1 + float64(record.Reps)/30)
+
+		if newMax > currentMax {
 			err = s.workoutRepository.UpdatePersonalRecord(ctx, user)
 			if err != nil {
 				return err

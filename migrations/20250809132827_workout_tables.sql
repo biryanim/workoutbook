@@ -45,8 +45,8 @@ CREATE TABLE IF NOT EXISTS personal_records (
     id int generated always as identity primary key,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     exercise_id INTEGER REFERENCES exercises(id),
-    weight DECIMAL(5,2),
-    reps INTEGER,
+    weight DECIMAL(5,2) not null,
+    reps INTEGER not null,
     date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     notes TEXT,
     UNIQUE(user_id, exercise_id)
