@@ -484,6 +484,11 @@
                     <input type="number" id="distance" class="form-control" min="0" step="0.1" value="0">
                 </div>
             </div>
+            <div class="form-group">
+                <label for="notes">Примечания:</label>
+                <textarea id="notes" class="form-control" rows="3" placeholder="Введите дополнительные заметки к упражнению"></textarea>
+            </div>
+
             <div style="display: flex; gap: 10px;">
                 <button type="submit" class="btn btn-success">Добавить</button>
                 <button type="button" class="btn btn-secondary" id="close-exercise-modal">Отмена</button>
@@ -876,7 +881,8 @@
 
         const exerciseData = {
             exercise_id: parseInt(document.getElementById('exercise-select').value),
-            sets: parseInt(document.getElementById('sets').value)
+            sets: parseInt(document.getElementById('sets').value),
+            notes: document.getElementById('notes').value.trim(),  // добавлено поле notes
         };
 
         if (exerciseType === 'strength') {
@@ -906,6 +912,7 @@
         }
     });
 
+
     // Личные рекорды
     async function loadPersonalRecords() {
         try {
@@ -925,20 +932,76 @@
         }
 
         container.innerHTML = `
-                <div class="records-grid">
-                    ${records.map(record => `
-                        <div class="record-card">
-                            <h4>${record.exercise.name}</h4>
-                            <div style="font-size: 2em; margin: 10px 0;">
-                                ${record.weight}кг × ${record.reps}
-                            </div>
-                            <p>Установлен: ${formatDate(record.date)}</p>
-                            <small>Расчетный 1RM: ${(record.weight * (1 + record.reps / 30)).toFixed(1)}кг</small>
+        <div class="records-grid">
+            ${records.map(record => {
+            const ex = record.exercise;
+            let displayValue = '';
+            let extraInfo = '';
+
+            if (ex.type === 'strength') {
+                switch (ex.record_type) {
+                    case 'weight':
+                        displayValue = `${record.weight} кг × ${record.reps}`;
+                        const oneRM = (record.weight * (1 + record.reps / 30)).toFixed(1);
+                        extraInfo = `<small>Расчетный 1RM: ${oneRM} кг</small>`;
+                        break;
+                    case 'reps':
+                        displayValue = `${record.reps} повторений`;
+                        break;
+                    case 'duration':
+                        displayValue = formatDuration(record.duration);
+                        break;
+                    case 'sets':
+                        displayValue = `${record.sets} подходов`;
+                        break;
+                    default:
+                        displayValue = `${record.weight} кг × ${record.reps}`;
+                }
+            } else if (ex.type === 'cardio') {
+                switch (ex.record_type) {
+                    case 'distance':
+                        displayValue = `${record.distance} км`;
+                        break;
+                    case 'duration':
+                        displayValue = formatDuration(record.duration);
+                        break;
+                    case 'sets':
+                        displayValue = `${record.sets} подходов`;
+                        break;
+                    default:
+                        displayValue = 'Нет данных';
+                }
+            } else {
+                displayValue = 'Неизвестный тип упражнения';
+            }
+
+            return `
+                    <div class="record-card">
+                        <h4>${ex.name}</h4>
+                        <div style="font-size: 2em; margin: 10px 0;">
+                            ${displayValue}
                         </div>
-                    `).join('')}
-                </div>
-            `;
+                        <p>Установлен: ${formatDate(record.date)}</p>
+                        ${extraInfo}
+                        ${record.notes ? `<p><em>Примечания: ${record.notes}</em></p>` : ''}
+                    </div>
+                `;
+        }).join('')}
+        </div>
+    `;
     }
+
+    // Функция для форматирования длительности в минуты и секунды
+    function formatDuration(seconds) {
+        if (!seconds || seconds === 0) return '0 сек';
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        if (mins > 0) {
+            return `${mins} мин ${secs} сек`;
+        }
+        return `${secs} сек`;
+    }
+
 
     // Прогресс
     async function loadProgressExercises() {

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"github.com/biryanim/workoutbook/internal/model"
+	"time"
 )
 
 type UserRepository interface {
@@ -15,10 +16,11 @@ type WorkoutRepository interface {
 	CreateWorkout(ctx context.Context, workout *model.Workout) (int64, error)
 	GetWorkoutByID(ctx context.Context, workoutID, userId int64) (*model.Workout, error)
 	ListWorkouts(ctx context.Context, userId int64, filter *model.WorkoutsFilter) ([]*model.Workout, error)
-	AddWorkoutExercise(ctx context.Context, we *model.WorkoutExercise) (int64, error)
+	AddWorkoutExercise(ctx context.Context, we *model.WorkoutExercise) (time.Time, error)
 	GetExercisesByWorkoutID(ctx context.Context, workoutID int64) ([]*model.WorkoutExercise, error)
 	IsUserHaveWorkout(ctx context.Context, userId, workoutId int64) (bool, error)
 	GetExercises(ctx context.Context, typ string) ([]*model.Exercise, error)
+	GetExerciseByID(ctx context.Context, exerciseID int64) (*model.Exercise, error)
 
 	GetPersonalRecord(ctx context.Context, userID, exerciseID int64) (*model.UserRecord, error)
 	AddRecord(ctx context.Context, user *model.UserRecord) (int64, error)

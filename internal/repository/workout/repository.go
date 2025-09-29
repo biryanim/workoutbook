@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	apperrors "github.com/biryanim/workoutbook/internal/errors"
 
@@ -131,28 +132,28 @@ func (r *repo) ListWorkouts(ctx context.Context, userId int64, filter *model.Wor
 	return workouts, nil
 }
 
-func (r *repo) AddWorkoutExercise(ctx context.Context, we *model.WorkoutExercise) (int64, error) {
+func (r *repo) AddWorkoutExercise(ctx context.Context, we *model.WorkoutExercise) (time.Time, error) {
 	query, args, err := r.qb.Insert("workout_exercises").
 		Columns("workout_id", "exercise_id", "sets", "reps", "weight", "duration", "distance").
 		Values(we.WorkoutID, we.ExerciseID, we.Sets, we.Reps, we.Weight, we.Duration, we.Distance).
-		Suffix("RETURNING id").ToSql()
+		Suffix("RETURNING created_at").ToSql()
 
 	if err != nil {
-		return 0, fmt.Errorf("failed to build insert query: %w", err)
+		return time.Time{}, fmt.Errorf("failed to build insert query: %w", err)
 	}
 
-	var id int64
-	err = r.db.DB().QueryRowContext(ctx, query, args...).Scan(&id)
+	var date time.Time
+	err = r.db.DB().QueryRowContext(ctx, query, args...).Scan(&date)
 	if err != nil {
-		return 0, fmt.Errorf("failed to insert workout: %w", err)
+		return time.Time{}, fmt.Errorf("failed to insert workout: %w", err)
 	}
 
-	return id, nil
+	return date, nil
 }
 
 func (r *repo) GetExercisesByWorkoutID(ctx context.Context, workoutID int64) ([]*model.WorkoutExercise, error) {
 	query, args, err := r.qb.
-		Select("we.id", "we.workout_id", "we.exercise_id", "we.sets", "we.reps", "we.weight", "we.duration", "we.distance", "e.name", "e.type", "e.muscle_group", "e.description").
+		Select("we.id", "we.workout_id", "we.exercise_id", "we.sets", "we.reps", "we.weight", "we.duration", "we.distance", "e.name", "e.type", "e.muscle_group", "e.description", "e.record_type").
 		From("workout_exercises we").
 		Join("exercises e ON we.exercise_id = e.id").
 		Where(squirrel.Eq{"we.workout_id": workoutID}).ToSql()
@@ -182,6 +183,7 @@ func (r *repo) GetExercisesByWorkoutID(ctx context.Context, workoutID int64) ([]
 			&exercise.Exercise.Type,
 			&exercise.Exercise.MuscleGroup,
 			&exercise.Exercise.Description,
+			&exercise.Exercise.RecordType,
 		)
 
 		exercises = append(exercises, &exercise)
@@ -212,7 +214,7 @@ func (r *repo) IsUserHaveWorkout(ctx context.Context, userId, workoutId int64) (
 }
 
 func (r *repo) GetExercises(ctx context.Context, exerciseType string) ([]*model.Exercise, error) {
-	builder := r.qb.Select("id", "name", "type", "muscle_group", "description").
+	builder := r.qb.Select("id", "name", "type", "muscle_group", "description", "record_type").
 		From("exercises")
 	if exerciseType != "" {
 		builder = builder.Where("type = ?", exerciseType)
@@ -238,6 +240,7 @@ func (r *repo) GetExercises(ctx context.Context, exerciseType string) ([]*model.
 			&exercise.Type,
 			&exercise.MuscleGroup,
 			&exercise.Description,
+			&exercise.RecordType,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan workout: %w", err)
@@ -254,10 +257,11 @@ func (r *repo) GetExercises(ctx context.Context, exerciseType string) ([]*model.
 }
 
 func (r *repo) AddRecord(ctx context.Context, user *model.UserRecord) (int64, error) {
+	fmt.Println(user.UserID, user.ExerciseID, user.Weight, user.Reps, user.Sets, user.Duration, user.Distance, user.Date, user.Notes)
 	query, args, err := r.qb.
 		Insert("personal_records").
-		Columns("user_id", "exercise_id", "weight", "reps", "date").
-		Values(user.UserID, user.ExerciseID, user.Weight, user.Reps, user.Date).
+		Columns("user_id", "exercise_id", "weight", "reps", "sets", "duration", "distance", "date", "notes").
+		Values(user.UserID, user.ExerciseID, user.Weight, user.Reps, user.Sets, user.Duration, user.Distance, user.Date, user.Notes).
 		Suffix("RETURNING id").ToSql()
 	if err != nil {
 		return 0, fmt.Errorf("failed to build insert query: %w", err)
@@ -275,19 +279,29 @@ func (r *repo) AddRecord(ctx context.Context, user *model.UserRecord) (int64, er
 func (r *repo) GetPersonalRecord(ctx context.Context, userID, exerciseID int64) (*model.UserRecord, error) {
 	log.Printf("Getting personal record for user %d, exercise %d", userID, exerciseID)
 	query, args, err := r.qb.
-		Select("weight", "reps").
+		Select("weight", "reps", "sets", "duration", "distance", "date", "notes").
 		From("personal_records").
-		Where(squirrel.Eq{"user_id": userID, "exercise_id": exerciseID}).ToSql()
+		Where(squirrel.Eq{"user_id": userID, "exercise_id": exerciseID}).
+		ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build select query: %w", err)
 	}
 
-	log.Printf("Query: %s, Args: %v", query, args)
-
 	var record model.UserRecord
 
-	err = r.db.DB().QueryRowContext(ctx, query, args...).Scan(&record.Weight, &record.Reps)
+	err = r.db.DB().QueryRowContext(ctx, query, args...).Scan(
+		&record.Weight,
+		&record.Reps,
+		&record.Sets,
+		&record.Duration,
+		&record.Distance,
+		&record.Date,
+		&record.Notes,
+	)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, pgx.ErrNoRows
+		}
 		return nil, fmt.Errorf("failed to list workouts: %w", err)
 	}
 
@@ -343,8 +357,13 @@ func (r *repo) UpdatePersonalRecord(ctx context.Context, user *model.UserRecord)
 		Update("personal_records").
 		Set("weight", user.Weight).
 		Set("reps", user.Reps).
+		Set("sets", user.Sets).
+		Set("duration", user.Duration).
+		Set("distance", user.Distance).
 		Set("date", user.Date).
-		Where(squirrel.Eq{"user_id": user.UserID, "exercise_id": user.ExerciseID}).ToSql()
+		Set("notes", user.Notes).
+		Where(squirrel.Eq{"user_id": user.UserID, "exercise_id": user.ExerciseID}).
+		ToSql()
 	if err != nil {
 		return fmt.Errorf("failed to build update query: %w", err)
 	}
@@ -358,10 +377,13 @@ func (r *repo) UpdatePersonalRecord(ctx context.Context, user *model.UserRecord)
 
 func (r *repo) ListRecords(ctx context.Context, userId int64) ([]*model.UserRecord, error) {
 	query, args, err := r.qb.
-		Select("pr.id", "pr.exercise_id", "pr.weight", "pr.reps", "pr.date", "e.name", "e.type", "e.muscle_group", "e.description").
+		Select("pr.id", "pr.exercise_id", "pr.weight", "pr.reps", "pr.sets", "pr.duration", "pr.distance", "pr.date", "pr.notes",
+			"e.name", "e.type", "e.muscle_group", "e.description", "e.record_type").
 		From("personal_records pr").
 		Join("exercises e ON pr.exercise_id = e.id").
-		Where(squirrel.Eq{"user_id": userId}).OrderBy("pr.date DESC").ToSql()
+		Where(squirrel.Eq{"pr.user_id": userId}).
+		OrderBy("pr.date DESC").
+		ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build select query: %w", err)
 	}
@@ -375,7 +397,22 @@ func (r *repo) ListRecords(ctx context.Context, userId int64) ([]*model.UserReco
 	var records []*model.UserRecord
 	for rows.Next() {
 		var record model.UserRecord
-		err = rows.Scan(&record.ID, &record.ExerciseID, &record.Weight, &record.Reps, &record.Date, &record.Exercise.Name, &record.Exercise.Type, &record.Exercise.MuscleGroup, &record.Exercise.Description)
+		err = rows.Scan(
+			&record.ID,
+			&record.ExerciseID,
+			&record.Weight,
+			&record.Reps,
+			&record.Sets,
+			&record.Duration,
+			&record.Distance,
+			&record.Date,
+			&record.Notes,
+			&record.Exercise.Name,
+			&record.Exercise.Type,
+			&record.Exercise.MuscleGroup,
+			&record.Exercise.Description,
+			&record.Exercise.RecordType,
+		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan records: %w", err)
 		}
@@ -385,4 +422,33 @@ func (r *repo) ListRecords(ctx context.Context, userId int64) ([]*model.UserReco
 		return nil, fmt.Errorf("failed to list records: %w", err)
 	}
 	return records, nil
+}
+
+func (r *repo) GetExerciseByID(ctx context.Context, exerciseID int64) (*model.Exercise, error) {
+	query, args, err := r.qb.
+		Select("id", "name", "type", "muscle_group", "description", "record_type").
+		From("exercises").
+		Where(squirrel.Eq{"id": exerciseID}).
+		ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build select query: %w", err)
+	}
+
+	var exercise model.Exercise
+	err = r.db.DB().QueryRowContext(ctx, query, args...).Scan(
+		&exercise.ID,
+		&exercise.Name,
+		&exercise.Type,
+		&exercise.MuscleGroup,
+		&exercise.Description,
+		&exercise.RecordType,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to get exercise by id: %w", err)
+	}
+
+	return &exercise, nil
 }

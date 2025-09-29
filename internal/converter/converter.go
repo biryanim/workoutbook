@@ -144,6 +144,7 @@ func FromAddExerciseToWorkout(d *dto.WorkoutExercise) *model.WorkoutExercise {
 		Weight:     d.Weight,
 		Duration:   d.Duration,
 		Distance:   d.Distance,
+		Notes:      d.Notes,
 		Exercise: model.Exercise{
 			ID:          d.Exercise.ID,
 			Name:        d.Exercise.Name,
@@ -177,6 +178,7 @@ func ToPersonalRecord(records []*model.UserRecord) []*dto.Record {
 			ID:          record.Exercise.ID,
 			Name:        record.Exercise.Name,
 			Type:        record.Exercise.Type,
+			RecordType:  record.Exercise.RecordType,
 			MuscleGroup: record.Exercise.MuscleGroup,
 			Description: record.Exercise.Description,
 		}
@@ -188,6 +190,9 @@ func ToPersonalRecord(records []*model.UserRecord) []*dto.Record {
 			Reps:       record.Reps,
 			Date:       record.Date,
 			Notes:      record.Notes,
+			Duration:   record.Duration,
+			Sets:       record.Sets,
+			Distance:   record.Distance,
 			Exercise:   ex,
 		})
 	}

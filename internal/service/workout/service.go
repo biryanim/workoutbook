@@ -7,7 +7,8 @@ import (
 	"github.com/biryanim/workoutbook/internal/model"
 	"github.com/biryanim/workoutbook/internal/repository"
 	"github.com/biryanim/workoutbook/internal/service"
-	"github.com/jackc/pgx/v5"
+	"github.com/pkg/errors"
+	"time"
 )
 
 var _ service.WorkoutService = (*serv)(nil)
@@ -68,6 +69,15 @@ func (s *serv) GetWorkout(ctx context.Context, userId, workoutId int64) (*model.
 	return workout, nil
 }
 
+func (s *serv) GetExercises(ctx context.Context, exerciseType string) ([]*model.Exercise, error) {
+	exrs, err := s.workoutRepository.GetExercises(ctx, exerciseType)
+	if err != nil {
+		return nil, err
+	}
+
+	return exrs, nil
+}
+
 func (s *serv) AddExerciseToWorkout(ctx context.Context, userId int64, we *model.WorkoutExercise) error {
 	err := s.txManager.ReadCommited(ctx, func(ctx context.Context) error {
 		has, err := s.workoutRepository.IsUserHaveWorkout(ctx, userId, we.WorkoutID)
@@ -78,12 +88,12 @@ func (s *serv) AddExerciseToWorkout(ctx context.Context, userId int64, we *model
 			return fmt.Errorf("workout not found for user %d", userId)
 		}
 
-		_, err = s.workoutRepository.AddWorkoutExercise(ctx, we)
+		date, err := s.workoutRepository.AddWorkoutExercise(ctx, we)
 		if err != nil {
 			return err
 		}
 
-		err = s.UpdatePersonalRecord(ctx, userId, we.ExerciseID, we.Weight, we.Reps)
+		err = s.UpdatePersonalRecord(ctx, userId, we, date)
 		if err != nil {
 			return err
 		}
@@ -98,25 +108,20 @@ func (s *serv) AddExerciseToWorkout(ctx context.Context, userId int64, we *model
 	return nil
 }
 
-func (s *serv) GetExercises(ctx context.Context, exerciseType string) ([]*model.Exercise, error) {
-	exrs, err := s.workoutRepository.GetExercises(ctx, exerciseType)
-	if err != nil {
-		return nil, err
-	}
-
-	return exrs, nil
-}
-
-func (s *serv) UpdatePersonalRecord(ctx context.Context, userID, exerciseID int64, weight float64, reps int) error {
+func (s *serv) UpdatePersonalRecord(ctx context.Context, userID int64, we *model.WorkoutExercise, date time.Time) error {
 	err := s.txManager.ReadCommited(ctx, func(ctx context.Context) error {
-		record, err := s.workoutRepository.GetPersonalRecord(ctx, userID, exerciseID)
+		record, err := s.workoutRepository.GetPersonalRecord(ctx, userID, we.ExerciseID)
 		user := &model.UserRecord{
 			UserID:     userID,
-			ExerciseID: exerciseID,
-			Weight:     weight,
-			Reps:       reps,
+			ExerciseID: we.ExerciseID,
+			Weight:     we.Weight,
+			Reps:       we.Reps,
+			Sets:       we.Sets,
+			Duration:   we.Duration,
+			Distance:   we.Distance,
+			Date:       date,
 		}
-		if record == nil || err == pgx.ErrNoRows {
+		if record == nil {
 			_, err = s.workoutRepository.AddRecord(ctx, user)
 			if err != nil {
 				return err
@@ -124,15 +129,61 @@ func (s *serv) UpdatePersonalRecord(ctx context.Context, userID, exerciseID int6
 			return nil
 		}
 
-		newMax := weight * (1 + float64(reps)/30)
-		currentMax := record.Weight * (1 + float64(record.Reps)/30)
+		exercise, err := s.workoutRepository.GetExerciseByID(ctx, we.ExerciseID)
+		if err != nil {
+			return err
+		}
+		we.Exercise = *exercise
 
-		if newMax > currentMax {
-			err = s.workoutRepository.UpdatePersonalRecord(ctx, user)
-			if err != nil {
-				return err
+		switch we.Exercise.Type {
+		case "strength":
+			// Особая логика для упражнений с собственным весом без веса
+			switch we.Exercise.Name {
+			case "Отжимания", "Подтягивания", "Скручивания":
+				if we.Reps > record.Reps {
+					err = s.workoutRepository.UpdatePersonalRecord(ctx, user)
+					if err != nil {
+						return err
+					}
+				}
+			default:
+				newMax := we.Weight * (1 + float64(we.Reps)/30)
+				currentMax := record.Weight * (1 + float64(record.Reps)/30)
+				if newMax > currentMax {
+					err = s.workoutRepository.UpdatePersonalRecord(ctx, user)
+					if err != nil {
+						return err
+					}
+				}
 			}
-			return nil
+		case "cardio":
+			switch we.Exercise.RecordType {
+			case "distance":
+				if we.Distance > record.Distance {
+					err = s.workoutRepository.UpdatePersonalRecord(ctx, user)
+					if err != nil {
+						return err
+					}
+				}
+			case "duration":
+				if we.Duration > record.Duration {
+					err = s.workoutRepository.UpdatePersonalRecord(ctx, user)
+					if err != nil {
+						return err
+					}
+				}
+			case "sets":
+				if we.Sets > record.Sets {
+					err = s.workoutRepository.UpdatePersonalRecord(ctx, user)
+					if err != nil {
+						return err
+					}
+				}
+			default:
+				return errors.New("unknown cardio record type")
+			}
+		default:
+			return errors.New("unsupported exercise type")
 		}
 
 		return nil

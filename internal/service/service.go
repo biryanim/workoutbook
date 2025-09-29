@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"github.com/biryanim/workoutbook/internal/model"
+	"time"
 )
 
 type AuthService interface {
@@ -19,6 +20,6 @@ type WorkoutService interface {
 	AddExerciseToWorkout(ctx context.Context, userId int64, we *model.WorkoutExercise) error
 	GetExercises(ctx context.Context, exerciseType string) ([]*model.Exercise, error)
 
-	UpdatePersonalRecord(ctx context.Context, userID, exerciseID int64, weight float64, reps int) error
+	UpdatePersonalRecord(ctx context.Context, userID int64, we *model.WorkoutExercise, date time.Time) error
 	GetPersonalRecords(ctx context.Context, userId int64) ([]*model.UserRecord, error)
 }

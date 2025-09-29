@@ -37,6 +37,7 @@ type WorkoutExercise struct {
 	Weight     float64
 	Duration   int
 	Distance   float64
+	Notes      string
 	Exercise   Exercise
 }
 
@@ -44,6 +45,7 @@ type Exercise struct {
 	ID          int64
 	Name        string
 	Type        string
+	RecordType  string
 	MuscleGroup string
 	Description string
 }
@@ -59,6 +61,9 @@ type UserRecord struct {
 	ExerciseID int64
 	Weight     float64
 	Reps       int
+	Sets       int
+	Distance   float64
+	Duration   int
 	Date       time.Time
 	Notes      string
 	Exercise   Exercise
