@@ -134,8 +134,8 @@ func (r *repo) ListWorkouts(ctx context.Context, userId int64, filter *model.Wor
 
 func (r *repo) AddWorkoutExercise(ctx context.Context, we *model.WorkoutExercise) (time.Time, error) {
 	query, args, err := r.qb.Insert("workout_exercises").
-		Columns("workout_id", "exercise_id", "sets", "reps", "weight", "duration", "distance").
-		Values(we.WorkoutID, we.ExerciseID, we.Sets, we.Reps, we.Weight, we.Duration, we.Distance).
+		Columns("workout_id", "exercise_id", "sets", "reps", "weight", "duration", "distance", "notes").
+		Values(we.WorkoutID, we.ExerciseID, we.Sets, we.Reps, we.Weight, we.Duration, we.Distance, we.Notes).
 		Suffix("RETURNING created_at").ToSql()
 
 	if err != nil {
@@ -153,7 +153,7 @@ func (r *repo) AddWorkoutExercise(ctx context.Context, we *model.WorkoutExercise
 
 func (r *repo) GetExercisesByWorkoutID(ctx context.Context, workoutID int64) ([]*model.WorkoutExercise, error) {
 	query, args, err := r.qb.
-		Select("we.id", "we.workout_id", "we.exercise_id", "we.sets", "we.reps", "we.weight", "we.duration", "we.distance", "e.name", "e.type", "e.muscle_group", "e.description", "e.record_type").
+		Select("we.id", "we.workout_id", "we.exercise_id", "we.sets", "we.reps", "we.weight", "we.duration", "we.distance", "we.notes", "e.name", "e.type", "e.muscle_group", "e.description", "e.record_type").
 		From("workout_exercises we").
 		Join("exercises e ON we.exercise_id = e.id").
 		Where(squirrel.Eq{"we.workout_id": workoutID}).ToSql()
@@ -179,6 +179,7 @@ func (r *repo) GetExercisesByWorkoutID(ctx context.Context, workoutID int64) ([]
 			&exercise.Weight,
 			&exercise.Duration,
 			&exercise.Distance,
+			&exercise.Notes,
 			&exercise.Exercise.Name,
 			&exercise.Exercise.Type,
 			&exercise.Exercise.MuscleGroup,

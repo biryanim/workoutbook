@@ -43,6 +43,7 @@ func ToGetWorkoutResp(w *model.WorkoutExercises) *dto.WorkoutExercises {
 			Weight:   ex.Weight,
 			Duration: ex.Duration,
 			Distance: ex.Distance,
+			Notes:    ex.Notes,
 			Exercise: dto.Exercise{
 				Name:        ex.Exercise.Name,
 				Type:        ex.Exercise.Type,

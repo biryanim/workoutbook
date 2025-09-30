@@ -808,46 +808,48 @@
 
     function displayWorkoutDetails(workout, workoutExercises) {
         const container = document.getElementById('workouts-list');
-        const exercises = workoutExercises || []; // Если workoutExercises null/undefined, используем пустой массив
+        const exercises = workoutExercises || [];
 
         container.innerHTML = `
-                <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <div>
-                            <h3>${workout.name}</h3>
-                            <p>${formatDate(workout.date)}</p>
-                            ${workout.notes ? `<p><em>${workout.notes}</em></p>` : ''}
-                        </div>
-                        <div>
-                            <button class="btn btn-primary btn-small" onclick="showAddExerciseModal()">Добавить упражнение</button>
-                            <button class="btn btn-secondary btn-small" onclick="loadWorkouts()">Назад</button>
-                        </div>
-                    </div>
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div>
+                    <h3>${workout.name}</h3>
+                    <p>${formatDate(workout.date)}</p>
+                    ${workout.notes ? `<p><em>${workout.notes}</em></p>` : ''}
+                </div>
+                <div>
+                    <button class="btn btn-primary btn-small" onclick="showAddExerciseModal()">Добавить упражнение</button>
+                    <button class="btn btn-secondary btn-small" onclick="loadWorkouts()">Назад</button>
+                </div>
+            </div>
 
-                    <h4>Упражнения:</h4>
-                    <div id="workout-exercises">
-                        ${exercises.length === 0 ?
+            <h4>Упражнения:</h4>
+            <div id="workout-exercises">
+                ${exercises.length === 0 ?
             '<p>В этой тренировке пока нет упражнений.</p>' :
             exercises.map(we => `
-                                <div class="exercise-item">
-                                    <h5>${we.exercise.name}</h5>
-                                    <div class="exercise-stats">
-                                        ${we.exercise.type === 'strength' ? `
-                                            <div class="stat-item">Подходы: ${we.sets}</div>
-                                            <div class="stat-item">Повторения: ${we.reps}</div>
-                                            <div class="stat-item">Вес: ${we.weight} кг</div>
-                                        ` : `
-                                            <div class="stat-item">Время: ${Math.floor(we.duration / 60)} мин</div>
-                                            ${we.distance > 0 ? `<div class="stat-item">Расстояние: ${we.distance} км</div>` : ''}
-                                        `}
-                                    </div>
-                                </div>
-                            `).join('')
-        }
+                    <div class="exercise-item">
+                        <h5>${we.exercise.name}</h5>
+                        <div class="exercise-stats">
+                            ${we.exercise.type === 'strength' ? `
+                                <div class="stat-item">Подходы: ${we.sets}</div>
+                                <div class="stat-item">Повторения: ${we.reps}</div>
+                                <div class="stat-item">Вес: ${we.weight} кг</div>
+                            ` : `
+                                <div class="stat-item">Время: ${Math.floor(we.duration / 60)} мин</div>
+                                ${we.distance > 0 ? `<div class="stat-item">Расстояние: ${we.distance} км</div>` : ''}
+                            `}
+                        </div>
+                        ${we.notes ? `<div class="exercise-notes"><em>Примечания: ${we.notes}</em></div>` : ''}
                     </div>
-                </div>
-            `;
+                `).join('')
+        }
+            </div>
+        </div>
+    `;
     }
+
 
     // Добавление упражнения в тренировку
     function showAddExerciseModal() {
@@ -932,75 +934,84 @@
         }
 
         container.innerHTML = `
-        <div class="records-grid">
-            ${records.map(record => {
+    <div class="records-grid">
+        ${records.map(record => {
             const ex = record.exercise;
-            let displayValue = '';
+            let mainInfo = '';
             let extraInfo = '';
 
+            // Основной рекорд
             if (ex.type === 'strength') {
                 switch (ex.record_type) {
                     case 'weight':
-                        displayValue = `${record.weight} кг × ${record.reps}`;
+                        mainInfo = `${record.weight} кг × ${record.reps}`;
                         const oneRM = (record.weight * (1 + record.reps / 30)).toFixed(1);
-                        extraInfo = `<small>Расчетный 1RM: ${oneRM} кг</small>`;
+                        extraInfo += `<div><small>Расчетный 1RM: ${oneRM} кг</small></div>`;
                         break;
                     case 'reps':
-                        displayValue = `${record.reps} повторений`;
+                        mainInfo = `${record.reps} повторений`;
                         break;
                     case 'duration':
-                        displayValue = formatDuration(record.duration);
+                        mainInfo = formatDuration(record.duration);
                         break;
                     case 'sets':
-                        displayValue = `${record.sets} подходов`;
+                        mainInfo = `${record.sets} подходов`;
                         break;
                     default:
-                        displayValue = `${record.weight} кг × ${record.reps}`;
+                        mainInfo = `${record.weight} кг × ${record.reps}`;
                 }
+                // Дополнительные поля для силовых
+                if (record.duration) extraInfo += `<div><small>Время: ${formatDuration(record.duration)}</small></div>`;
+                if (record.sets) extraInfo += `<div><small>Подходы: ${record.sets}</small></div>`;
             } else if (ex.type === 'cardio') {
                 switch (ex.record_type) {
                     case 'distance':
-                        displayValue = `${record.distance} км`;
+                        mainInfo = `${record.distance} км`;
                         break;
                     case 'duration':
-                        displayValue = formatDuration(record.duration);
+                        mainInfo = formatDuration(record.duration);
                         break;
                     case 'sets':
-                        displayValue = `${record.sets} подходов`;
+                        mainInfo = `${record.sets} подходов`;
                         break;
                     default:
-                        displayValue = 'Нет данных';
+                        mainInfo = 'Нет данных';
                 }
+                // Всегда показываем дополнительные параметры для кардио
+                if (record.duration) extraInfo += `<div><small>Длительность: ${formatDuration(record.duration)}</small></div>`;
+                if (record.distance) extraInfo += `<div><small>Расстояние: ${record.distance} км</small></div>`;
+                if (record.sets) extraInfo += `<div><small>Подходы: ${record.sets}</small></div>`;
+                if (record.reps) extraInfo += `<div><small>Повторения: ${record.reps}</small></div>`;
             } else {
-                displayValue = 'Неизвестный тип упражнения';
+                mainInfo = 'Неизвестный тип упражнения';
             }
 
             return `
-                    <div class="record-card">
-                        <h4>${ex.name}</h4>
-                        <div style="font-size: 2em; margin: 10px 0;">
-                            ${displayValue}
-                        </div>
-                        <p>Установлен: ${formatDate(record.date)}</p>
-                        ${extraInfo}
-                        ${record.notes ? `<p><em>Примечания: ${record.notes}</em></p>` : ''}
+                <div class="record-card">
+                    <h4>${ex.name}</h4>
+                    <div style="font-size: 2em; margin: 10px 0;">
+                        ${mainInfo}
                     </div>
-                `;
+                    <p>Установлен: ${formatDate(record.date)}</p>
+                    ${extraInfo}
+                    ${record.notes ? `<p><em>Примечания: ${record.notes}</em></p>` : ''}
+                </div>
+            `;
         }).join('')}
-        </div>
+    </div>
     `;
     }
 
-    // Функция для форматирования длительности в минуты и секунды
     function formatDuration(seconds) {
         if (!seconds || seconds === 0) return '0 сек';
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         if (mins > 0) {
-            return `${mins} мин ${secs} сек`;
+            return `${mins} мин ${secs > 0 ? secs + ' сек' : ''}`;
         }
         return `${secs} сек`;
     }
+
 
 
     // Прогресс
