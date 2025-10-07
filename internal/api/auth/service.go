@@ -26,13 +26,18 @@ func NewImplementation(authService service.AuthService) *Implementation {
 func (i *Implementation) Register(c *gin.Context) {
 	var registerReq dto.UserRegisterRequest
 
+	fmt.Println("BBBBBBBBBBB")
+
 	if err := c.ShouldBindJSON(&registerReq); err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input"})
 		return
 	}
 
+	fmt.Println(registerReq)
+
 	resp, err := i.authService.Register(c.Request.Context(), converter.FromUserRegistrationRequest(&registerReq))
+	fmt.Println("AAAAAAAAAAAAAAAAAAAAA")
 	if err != nil {
 		fmt.Println(err)
 		appErr := apperrors.FromError(err)
@@ -64,7 +69,6 @@ func (i *Implementation) Login(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"token": user.Token,
-		"user":  user.Username,
 	})
 }
 

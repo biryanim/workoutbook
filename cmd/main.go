@@ -14,9 +14,46 @@ import (
 	"github.com/biryanim/workoutbook/internal/service/auth"
 	"github.com/biryanim/workoutbook/internal/service/workout"
 	"github.com/gin-gonic/gin"
+	"github.com/microcosm-cc/bluemonday"
 	"log"
 	"net/http"
 )
+
+func XSSMiddleware() gin.HandlerFunc {
+	p := bluemonday.UGCPolicy()
+
+	return func(c *gin.Context) {
+		for _, values := range c.Request.URL.Query() {
+			for i, value := range values {
+				values[i] = p.Sanitize(value)
+			}
+		}
+
+		// Санитизация form данных
+		if c.Request.Method == "POST" || c.Request.Method == "PUT" || c.Request.Method == "PATCH" {
+			if err := c.Request.ParseForm(); err == nil {
+				for _, values := range c.Request.PostForm {
+					for i, value := range values {
+						values[i] = p.Sanitize(value)
+					}
+				}
+			}
+		}
+
+		c.Next()
+	}
+}
+
+func SecurityHeadersMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("X-XSS-Protection", "1; mode=block")
+		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("X-Frame-Options", "DENY")
+		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'")
+		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
+		c.Next()
+	}
+}
 
 func main() {
 	ctx := context.Background()
@@ -59,6 +96,35 @@ func main() {
 	workoutImpl := workoutImpl.NewImplementation(workoutService)
 
 	r := gin.Default()
+	//r.Use(SecurityHeadersMiddleware())
+	//r.Use(XSSMiddleware())
+	//
+	//store := cookie.NewStore([]byte("your-secret-key-32-bytes-long!!"))
+	//store.Options(sessions.Options{
+	//	Path:     "/",
+	//	MaxAge:   3600 * 24,               // 24 часа
+	//	HttpOnly: true,                    // Защита от XSS
+	//	Secure:   false,                   // Установите true в production с HTTPS
+	//	SameSite: http.SameSiteStrictMode, // Дополнительная защита от CSRF
+	//})
+	//r.Use(sessions.Sessions("workout_session", store))
+	//
+	//r.Use(csrf.Middleware(csrf.Options{
+	//	Secret: "csrf-secret-key-change-in-production",
+	//	ErrorFunc: func(c *gin.Context) {
+	//		c.JSON(http.StatusForbidden, gin.H{
+	//			"error": "CSRF token mismatch",
+	//		})
+	//		c.Abort()
+	//	},
+	//}))
+	//
+	//r.GET("/api/csrf-token", func(c *gin.Context) {
+	//	c.JSON(http.StatusOK, gin.H{
+	//		"csrf_token": csrf.GetToken(c),
+	//	})
+	//})
+
 	public := r.Group("/api")
 	{
 		public.POST("/register", authImpl.Register)

@@ -8,9 +8,7 @@ import (
 )
 
 type CreateUserParams struct {
-	Email string
-	Name  string
-	//Age      int
+	Email    string
 	Password string
 }
 
@@ -20,9 +18,7 @@ type LoginUserParams struct {
 }
 
 type User struct {
-	ID   int64
-	Name string
-	//Age       int
+	ID        int64
 	Email     string
 	Password  string
 	CreatedAt time.Time
@@ -35,6 +31,5 @@ type UserClaims struct {
 }
 
 type UserLoginResp struct {
-	Username string
-	Token    string
+	Token string
 }

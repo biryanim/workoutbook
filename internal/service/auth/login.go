@@ -28,7 +28,6 @@ func (s *serv) Login(ctx context.Context, userLogin *model.LoginUserParams) (*mo
 	}
 
 	return &model.UserLoginResp{
-		Token:    token,
-		Username: user.Name,
+		Token: token,
 	}, nil
 }

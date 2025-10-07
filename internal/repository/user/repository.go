@@ -30,8 +30,8 @@ func NewRepository(db db.Client) *repo {
 func (r *repo) Create(ctx context.Context, user *model.CreateUserParams) (int64, error) {
 	query, args, err := r.qb.
 		Insert("users").
-		Columns("email", "name", "password").
-		Values(user.Email, user.Name, user.Password).
+		Columns("email", "password").
+		Values(user.Email, user.Password).
 		Suffix("RETURNING id").ToSql()
 	if err != nil {
 		return 0, fmt.Errorf("failed to build insert query: %w", err)
@@ -52,7 +52,7 @@ func (r *repo) Create(ctx context.Context, user *model.CreateUserParams) (int64,
 
 func (r *repo) GetByEmail(ctx context.Context, email string) (*model.User, error) {
 	query, args, err := r.qb.
-		Select("id", "name", "email", "password", "created_at", "updated_at").
+		Select("id", "email", "password", "created_at", "updated_at").
 		From("users").
 		Where(squirrel.Eq{"email": email}).
 		ToSql()
@@ -64,7 +64,6 @@ func (r *repo) GetByEmail(ctx context.Context, email string) (*model.User, error
 	var user model.User
 	err = r.db.DB().QueryRowContext(ctx, query, args...).Scan(
 		&user.ID,
-		&user.Name,
 		&user.Email,
 		&user.Password,
 		&user.CreatedAt,
@@ -82,7 +81,7 @@ func (r *repo) GetByEmail(ctx context.Context, email string) (*model.User, error
 
 func (r *repo) GetByID(ctx context.Context, id int64) (*model.User, error) {
 	query, args, err := r.qb.
-		Select("id", "name", "email", "password", "created_at", "updated_at").
+		Select("id", "email", "password", "created_at", "updated_at").
 		From("users").
 		Where(squirrel.Eq{"id": id}).
 		ToSql()
@@ -93,7 +92,6 @@ func (r *repo) GetByID(ctx context.Context, id int64) (*model.User, error) {
 	var user model.User
 	err = r.db.DB().QueryRowContext(ctx, query, args...).Scan(
 		&user.ID,
-		&user.Name,
 		&user.Email,
 		&user.Password,
 		&user.CreatedAt,

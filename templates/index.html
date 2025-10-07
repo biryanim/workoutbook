@@ -355,7 +355,7 @@
     <div class="header">
         <h1>💪 Дневник тренировок</h1>
         <div class="user-info">
-            <span id="user-name">Пользователь</span>
+<!--            <span id="user-name">Пользователь</span>-->
             <button class="btn btn-secondary btn-small" id="logout-btn">Выйти</button>
         </div>
     </div>
@@ -364,7 +364,6 @@
         <button class="tab active" data-tab="workouts">Тренировки</button>
         <button class="tab" data-tab="exercises">Упражнения</button>
         <button class="tab" data-tab="records">Рекорды</button>
-        <button class="tab" data-tab="progress">Прогресс</button>
     </div>
 
     <!-- Вкладка тренировок -->
@@ -403,22 +402,6 @@
             <h3>Личные рекорды</h3>
             <div id="records-list">
                 <p>Загрузка рекордов...</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Вкладка прогресса -->
-    <div id="progress-tab" class="tab-content">
-        <div class="card">
-            <h3>Прогресс тренировок</h3>
-            <div class="form-group">
-                <label for="progress-exercise">Выберите упражнение:</label>
-                <select id="progress-exercise" class="form-control">
-                    <option value="">Выберите упражнение</option>
-                </select>
-            </div>
-            <div id="progress-chart" class="progress-chart">
-                <p>Выберите упражнение для просмотра прогресса</p>
             </div>
         </div>
     </div>
@@ -571,7 +554,7 @@
     function showApp() {
         document.getElementById('auth-container').classList.add('hidden');
         document.getElementById('app-container').classList.remove('hidden');
-        document.getElementById('user-name').textContent = currentUser;
+        // document.getElementById('user-name').textContent = currentUser;
         loadData();
     }
 
@@ -653,8 +636,6 @@
                 loadExercises();
             } else if (tabName === 'records') {
                 loadPersonalRecords();
-            } else if (tabName === 'progress') {
-                loadProgressExercises();
             }
         });
     });
@@ -1012,27 +993,6 @@
         return `${secs} сек`;
     }
 
-
-
-    // Прогресс
-    async function loadProgressExercises() {
-        updateExerciseSelects();
-    }
-
-    document.getElementById('progress-exercise').addEventListener('change', async (e) => {
-        const exerciseId = e.target.value;
-        if (!exerciseId) {
-            document.getElementById('progress-chart').innerHTML = '<p>Выберите упражнение для просмотра прогресса</p>';
-            return;
-        }
-
-        try {
-            const progress = await apiRequest(`/progress?exercise_id=${exerciseId}`);
-            displayProgress(progress);
-        } catch (error) {
-            document.getElementById('progress-chart').innerHTML = `<p>Ошибка загрузки прогресса: ${error.message}</p>`;
-        }
-    });
 
     function displayProgress(progressData) {
         const container = document.getElementById('progress-chart');

@@ -2,7 +2,6 @@
 -- +goose StatementBegin
 create table users (
     id int generated always as identity primary key,
-    name VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password TEXT NOT NULL,
     created_at timestamp not null default now(),

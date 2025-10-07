@@ -12,7 +12,6 @@ func FromUserRegistrationRequest(u *dto.UserRegisterRequest) *model.CreateUserPa
 	return &model.CreateUserParams{
 		Email:    u.Email,
 		Password: u.Password,
-		Name:     u.Username,
 	}
 }
 
