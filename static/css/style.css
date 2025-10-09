@@ -552,3 +552,180 @@ footer {
 .add-set-row .btn-sm {
     padding: 4px 8px;
 }
+
+/* Фильтр упражнений */
+.exercise-filter {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.exercise-filter label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.exercise-filter label:hover {
+    color: var(--primary);
+}
+
+.exercise-filter input[type="radio"] {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+}
+
+/* Select упражнений */
+#exerciseSelect {
+    width: 100% !important;
+    padding: 10px 12px !important;
+    font-size: 15px !important;
+    border: 2px solid var(--border) !important;
+    border-radius: 6px !important;
+    background: white !important;
+    cursor: pointer !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    appearance: auto !important;
+    -webkit-appearance: menulist !important;
+    -moz-appearance: menulist !important;
+}
+
+#exerciseSelect:hover {
+    border-color: var(--primary) !important;
+}
+
+#exerciseSelect:focus {
+    outline: none !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1) !important;
+}
+
+#exerciseSelect optgroup {
+    font-weight: bold !important;
+    color: #333 !important;
+    font-style: normal !important;
+    background: #f8f9fa !important;
+    padding: 8px !important;
+}
+
+#exerciseSelect option {
+    padding: 8px !important;
+    font-weight: normal !important;
+    color: #000 !important;
+    background: white !important;
+}
+
+/* Модальное окно добавления упражнения */
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.modal-actions .btn {
+    flex: 1;
+}
+
+/* Set rows */
+.set-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.set-row label {
+    font-weight: 500;
+    font-size: 13px;
+    min-width: 70px;
+    flex-shrink: 0;
+}
+
+.set-row input {
+    padding: 8px 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    flex: 1;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.set-row .remove-set {
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.set-row .remove-set:hover {
+    background: #dc2626;
+}
+
+/* Add set row (для добавления новых подходов в существующее упражнение) */
+.add-set-row {
+    background: #f0fdf4 !important;
+}
+
+.add-set-row input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.add-set-row .btn-sm {
+    padding: 6px 12px;
+    white-space: nowrap;
+}
+
+
+
+#exerciseSelect {
+    width: 100% !important;
+    padding: 10px !important;
+    font-size: 15px !important;
+    border: 2px solid #ddd !important;
+    border-radius: 6px !important;
+    background: white !important;
+    cursor: pointer !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+#exerciseSelect optgroup {
+    font-weight: bold;
+    color: #333;
+    font-style: normal;
+}
+
+#exerciseSelect option {
+    padding: 8px;
+    font-weight: normal;
+    color: #000;
+    background: white;
+}

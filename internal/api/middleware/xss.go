@@ -9,14 +9,12 @@ func XSSMiddleware() gin.HandlerFunc {
 	p := bluemonday.UGCPolicy()
 
 	return func(c *gin.Context) {
-		// Sanitize query parameters
 		for _, values := range c.Request.URL.Query() {
 			for i, value := range values {
 				values[i] = p.Sanitize(value)
 			}
 		}
 
-		// Sanitize form data
 		if c.Request.Method == "POST" || c.Request.Method == "PUT" || c.Request.Method == "PATCH" {
 			if err := c.Request.ParseForm(); err == nil {
 				for _, values := range c.Request.PostForm {

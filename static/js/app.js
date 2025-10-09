@@ -133,9 +133,11 @@ let isExerciseModalInitialized = false;
 
 function initAddExerciseModal(workoutId) {
     if (isExerciseModalInitialized) {
-        return; // Если уже инициализировано, выходим
+        console.log('Модальное окно уже инициализировано');
+        return;
     }
     isExerciseModalInitialized = true;
+    console.log('Инициализация модального окна добавления упражнения');
 
     const modal = document.getElementById('addExerciseModal');
     const addExerciseBtn = document.getElementById('addExerciseBtn');
@@ -148,19 +150,17 @@ function initAddExerciseModal(workoutId) {
     const addSetBtn = document.getElementById('addSetBtn');
 
     let exercises = [];
-    let setCounter = 0;
+    let allExercises = [];
 
-    // Функция для добавления подхода
     function addSetRow() {
-        console.log('addSetRow вызвана, текущий setCounter:', setCounter);
-        console.trace(); // покажет откуда вызывается функция
-
-        setCounter++;
         const container = document.getElementById('sets-container');
+        const currentCount = container.querySelectorAll('.set-row').length;
+        const newNumber = currentCount + 1;
+
         const row = document.createElement('div');
         row.className = 'set-row';
         row.innerHTML = `
-            <label>Подход ${setCounter}</label>
+            <label>Подход ${newNumber}</label>
             <input type="number" class="set-weight" placeholder="Вес" step="0.5" min="0" required>
             <input type="number" class="set-reps" placeholder="Повт" min="1" required>
             <button type="button" class="remove-set">✕</button>
@@ -174,47 +174,144 @@ function initAddExerciseModal(workoutId) {
         container.appendChild(row);
     }
 
-    // Функция для перенумерации подходов
     function renumberSets() {
-        const rows = document.querySelectorAll('#sets-container .set-row');
-        setCounter = rows.length;
+        const container = document.getElementById('sets-container');
+        const rows = container.querySelectorAll('.set-row');
+
         rows.forEach((row, index) => {
             row.querySelector('label').textContent = `Подход ${index + 1}`;
         });
     }
 
-    // Функция очистки формы
     function resetForm() {
-        setCounter = 0;
-        document.getElementById('sets-container').innerHTML = '';
+        const container = document.getElementById('sets-container');
+        container.innerHTML = '';
         document.getElementById('exerciseNotes').value = '';
-        document.getElementById('cardioDistance').value = '';
-        document.getElementById('cardioDuration').value = '';
-        document.getElementById('cardioHeartRate').value = '';
-        document.getElementById('cardioCalories').value = '';
+
+        const distanceInput = document.getElementById('cardioDistance');
+        const durationInput = document.getElementById('cardioDuration');
+        if (distanceInput) distanceInput.value = '';
+        if (durationInput) durationInput.value = '';
+
         strengthForm.style.display = 'none';
         cardioForm.style.display = 'none';
         exerciseSelect.value = '';
     }
 
-    // Открытие модального окна
+    function populateExercises(exercisesList) {
+        console.log('=== populateExercises вызвана ===');
+        console.log('Получено упражнений:', exercisesList.length);
+
+        exerciseSelect.innerHTML = '<option value="">Выберите упражнение</option>';
+
+        const strengthExercises = exercisesList.filter(ex => ex.type === 'strength');
+        const cardioExercises = exercisesList.filter(ex => ex.type === 'cardio');
+
+        console.log('Силовых:', strengthExercises.length);
+        console.log('Кардио:', cardioExercises.length);
+
+        if (strengthExercises.length > 0) {
+            const strengthGroup = document.createElement('optgroup');
+            strengthGroup.label = '💪 Силовые упражнения';
+
+            const byMuscle = strengthExercises.reduce((acc, ex) => {
+                const group = ex.muscle_group || 'Другое';
+                if (!acc[group]) acc[group] = [];
+                acc[group].push(ex);
+                return acc;
+            }, {});
+
+            Object.keys(byMuscle).sort().forEach(muscle => {
+                byMuscle[muscle].forEach(ex => {
+                    const option = document.createElement('option');
+                    option.value = ex.id;
+                    option.textContent = `${ex.name} (${muscle})`;
+                    strengthGroup.appendChild(option);
+                });
+            });
+
+            exerciseSelect.appendChild(strengthGroup);
+        }
+
+        if (cardioExercises.length > 0) {
+            const cardioGroup = document.createElement('optgroup');
+            cardioGroup.label = '🏃 Кардио упражнения';
+
+            cardioExercises.forEach(ex => {
+                const option = document.createElement('option');
+                option.value = ex.id;
+                option.textContent = ex.name;
+                cardioGroup.appendChild(option);
+            });
+
+            exerciseSelect.appendChild(cardioGroup);
+        }
+
+        console.log('Итого options в select:', exerciseSelect.options.length);
+    }
+
+    function filterExercises(filterType) {
+        console.log('Фильтрация по типу:', filterType);
+
+        if (filterType === 'all') {
+            exercises = allExercises;
+        } else {
+            exercises = allExercises.filter(ex => ex.type === filterType);
+        }
+
+        console.log('Упражнений после фильтрации:', exercises.length);
+        populateExercises(exercises);
+    }
+
+    // Обработчик фильтра
+    const filterRadios = document.querySelectorAll('input[name="exerciseFilter"]');
+    if (filterRadios.length > 0) {
+        filterRadios.forEach(radio => {
+            radio.onchange = () => {
+                // ВАЖНО: Проверяем, что данные загружены
+                if (allExercises.length === 0) {
+                    console.log('Данные ещё не загружены, пропускаем фильтрацию');
+                    return;
+                }
+
+                filterExercises(radio.value);
+                exerciseSelect.value = '';
+                strengthForm.style.display = 'none';
+                cardioForm.style.display = 'none';
+            };
+        });
+    }
+
     addExerciseBtn.onclick = async () => {
+        console.log('=== Кнопка "Добавить упражнение" нажата ===');
         resetForm();
 
         try {
+            console.log('Запрос к API...');
             const data = await WorkoutAPI.getExercises();
-            exercises = data.exercises || [];
+            console.log('Данные получены:', data);
 
-            exerciseSelect.innerHTML = '<option value="">Выберите упражнение</option>' +
-                exercises.map(ex => `<option value="${ex.id}">${ex.name} (${ex.type === 'strength' ? 'Силовое' : 'Кардио'})</option>`).join('');
+            allExercises = data.exercises || [];
+            exercises = allExercises;
+            console.log('Всего упражнений:', allExercises.length);
+
+            populateExercises(exercises);
+
+            console.log('После populateExercises, options:', exerciseSelect.options.length);
+
+            // Устанавливаем фильтр "Все" ПОСЛЕ загрузки
+            const allFilter = document.querySelector('input[name="exerciseFilter"][value="all"]');
+            if (allFilter) {
+                allFilter.checked = true;
+            }
 
             modal.style.display = 'flex';
         } catch (error) {
+            console.error('Ошибка:', error);
             alert('Ошибка загрузки упражнений: ' + error.message);
         }
     };
 
-    // Закрытие модального окна
     closeBtn.onclick = () => {
         modal.style.display = 'none';
         resetForm();
@@ -225,10 +322,11 @@ function initAddExerciseModal(workoutId) {
         resetForm();
     };
 
-    // Выбор типа упражнения
     exerciseSelect.onchange = () => {
         const selectedExerciseId = parseInt(exerciseSelect.value);
         const selectedExercise = exercises.find(ex => ex.id === selectedExerciseId);
+
+        console.log('Выбрано упражнение:', selectedExercise);
 
         if (!selectedExercise) {
             strengthForm.style.display = 'none';
@@ -240,7 +338,8 @@ function initAddExerciseModal(workoutId) {
             strengthForm.style.display = 'block';
             cardioForm.style.display = 'none';
 
-            if (setCounter === 0) {
+            const container = document.getElementById('sets-container');
+            if (container.querySelectorAll('.set-row').length === 0) {
                 addSetRow();
             }
         } else {
@@ -249,12 +348,10 @@ function initAddExerciseModal(workoutId) {
         }
     };
 
-    // Кнопка добавления подхода
     addSetBtn.onclick = () => {
         addSetRow();
     };
 
-    // Сохранение упражнения
     saveExerciseBtn.onclick = async () => {
         const selectedExerciseId = parseInt(exerciseSelect.value);
         if (!selectedExerciseId) {
@@ -267,7 +364,9 @@ function initAddExerciseModal(workoutId) {
 
         try {
             if (selectedExercise.type === 'strength') {
-                const setRows = document.querySelectorAll('#sets-container .set-row');
+                const container = document.getElementById('sets-container');
+                const setRows = container.querySelectorAll('.set-row');
+
                 if (setRows.length === 0) {
                     alert('Добавьте хотя бы один подход');
                     return;
@@ -288,8 +387,6 @@ function initAddExerciseModal(workoutId) {
             } else {
                 const distance = parseFloat(document.getElementById('cardioDistance').value) || null;
                 const duration = parseInt(document.getElementById('cardioDuration').value);
-                const heartRate = parseInt(document.getElementById('cardioHeartRate').value) || null;
-                const calories = parseInt(document.getElementById('cardioCalories').value) || null;
 
                 if (!duration) {
                     alert('Укажите время тренировки');
@@ -299,8 +396,8 @@ function initAddExerciseModal(workoutId) {
                 const cardioData = {
                     distance_km: distance,
                     duration_seconds: duration * 60,
-                    avg_heart_rate: heartRate,
-                    calories_burned: calories
+                    avg_heart_rate: null,
+                    calories_burned: null
                 };
 
                 await WorkoutAPI.addCardioToWorkout(workoutId, selectedExerciseId, 0, notes, cardioData);
@@ -314,3 +411,4 @@ function initAddExerciseModal(workoutId) {
         }
     };
 }
+

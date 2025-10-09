@@ -40,52 +40,62 @@
         <div id="addExerciseModal" class="modal" style="display: none;">
             <div class="modal-content">
                 <span class="close">&times;</span>
-                <h3>Добавить упражнение</h3>
+                <h2>Добавить упражнение</h2>
+
+                <!-- Фильтр по типу упражнения -->
+                <div class="exercise-filter">
+                    <label>
+                        <input type="radio" name="exerciseFilter" value="all" checked>
+                        Все
+                    </label>
+                    <label>
+                        <input type="radio" name="exerciseFilter" value="strength">
+                        Силовые
+                    </label>
+                    <label>
+                        <input type="radio" name="exerciseFilter" value="cardio">
+                        Кардио
+                    </label>
+                </div>
 
                 <div class="form-group">
-                    <label>Выберите упражнение</label>
-                    <select id="exerciseSelect">
-                        <option value="">Загрузка...</option>
+                    <label for="exerciseSelect">Упражнение</label>
+                    <select id="exerciseSelect" required>
+                        <option value="">Выберите упражнение</option>
                     </select>
                 </div>
 
-                <div id="strengthForm" style="display: none;">
-                    <h4>Подходы</h4>
-                    <div id="sets-container"></div>
-                    <button type="button" class="btn btn-secondary btn-sm" id="addSetBtn">+ Добавить подход</button>
+                <div class="form-group">
+                    <label for="exerciseNotes">Заметки</label>
+                    <textarea id="exerciseNotes" rows="3"></textarea>
                 </div>
 
+                <!-- Форма для силовых упражнений -->
+                <div id="strengthForm" style="display: none;">
+                    <h3>Подходы</h3>
+                    <div id="sets-container"></div>
+                    <button type="button" class="btn btn-secondary" id="addSetBtn">+ Добавить подход</button>
+                </div>
+
+                <!-- Форма для кардио -->
                 <div id="cardioForm" style="display: none;">
-                    <h4>Кардио данные</h4>
                     <div class="form-group">
-                        <label>Дистанция (км)</label>
+                        <label for="cardioDistance">Дистанция (км)</label>
                         <input type="number" id="cardioDistance" step="0.1" min="0">
                     </div>
                     <div class="form-group">
-                        <label>Время (минуты)</label>
-                        <input type="number" id="cardioDuration" step="1" min="1">
-                    </div>
-                    <div class="form-group">
-                        <label>Средний пульс</label>
-                        <input type="number" id="cardioHeartRate" min="30" max="250">
-                    </div>
-                    <div class="form-group">
-                        <label>Калории</label>
-                        <input type="number" id="cardioCalories" min="0">
+                        <label for="cardioDuration">Время (минуты)</label>
+                        <input type="number" id="cardioDuration" min="1" required>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Заметки</label>
-                    <textarea id="exerciseNotes" rows="2"></textarea>
-                </div>
-
-                <div class="modal-buttons">
+                <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" id="cancelAddExercise">Отмена</button>
                     <button type="button" class="btn btn-primary" id="saveExercise">Сохранить</button>
                 </div>
             </div>
         </div>
+
     </main>
 </div>
 
