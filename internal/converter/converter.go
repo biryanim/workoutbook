@@ -22,49 +22,83 @@ func FromUserLoginRequest(u *dto.UserLoginRequest) *model.LoginUserParams {
 	}
 }
 
-func FromCreateWorkoutRequest(r *dto.Workout) *model.Workout {
-	return &model.Workout{
-		UserID: r.UserId,
-		Date:   r.Date,
-		Name:   r.Name,
-		Notes:  r.Note,
+func FromCreateWorkoutRequest(r *dto.CreateWorkoutRequest) (*model.Workout, error) {
+	layout := "2006-01-02"
+	t, err := time.Parse(layout, r.WorkoutDate)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not parse workout date")
 	}
+	return model.NewWorkout(r.UserID, r.Name, r.Description, t), nil
 }
 
-func ToGetWorkoutResp(w *model.WorkoutExercises) *dto.WorkoutExercises {
-	var (
-		exercises []*dto.WorkoutExercise
-	)
-	for _, ex := range w.Exercises {
-		dtoEx := &dto.WorkoutExercise{
-			Sets:     ex.Sets,
-			Reps:     ex.Reps,
-			Weight:   ex.Weight,
-			Duration: ex.Duration,
-			Distance: ex.Distance,
-			Notes:    ex.Notes,
-			Exercise: dto.Exercise{
-				Name:        ex.Exercise.Name,
-				Type:        ex.Exercise.Type,
-				MuscleGroup: ex.Exercise.MuscleGroup,
-				Description: ex.Exercise.Description,
-			},
+func ToGetWorkoutResp(w *model.Workout) *dto.Workout {
+	if w == nil {
+		return nil
+	}
+
+	// Конвертация упражнения
+	convertExercise := func(ex *model.WorkoutExercise) *dto.WorkoutExercise {
+		if ex == nil {
+			return nil
 		}
-		exercises = append(exercises, dtoEx)
+
+		// Преобразование подходов
+		var sets []*dto.ExerciseSet
+		for _, s := range ex.Sets {
+			sets = append(sets, &dto.ExerciseSet{
+				ID:        s.ID,
+				SetNumber: s.SetNumber,
+				Weight:    s.Weight,
+				Reps:      s.Reps,
+			})
+		}
+
+		var cardio *dto.CardioRecord
+		if ex.Cardio != nil {
+			cardio = &dto.CardioRecord{
+				ID:              ex.Cardio.ID,
+				DistanceKm:      ex.Cardio.DistanceKm,
+				DurationSeconds: ex.Cardio.DurationSeconds,
+			}
+		}
+
+		// Преобразование связанного упражнения
+		var exerciseDto *dto.Exercise
+		if ex.Exercise != nil {
+			exerciseDto = &dto.Exercise{
+				ID:          ex.Exercise.ID,
+				Name:        ex.Exercise.Name,
+				Description: ex.Exercise.Description,
+				Type:        string(ex.Exercise.Type),
+				MuscleGroup: ex.Exercise.MuscleGroup,
+			}
+		}
+
+		return &dto.WorkoutExercise{
+			ID:         ex.ID,
+			WorkoutID:  ex.WorkoutID,
+			ExerciseID: ex.ExerciseID,
+			Notes:      ex.Notes,
+			Exercise:   exerciseDto,
+			Sets:       sets,
+			Cardio:     cardio,
+		}
 	}
 
-	workout := dto.Workout{
-		ID:   w.Workout.ID,
-		Date: w.Workout.Date,
-		Name: w.Workout.Name,
-		Note: w.Workout.Notes,
+	// Преобразование всех упражнений тренировки
+	var exercises []*dto.WorkoutExercise
+	for _, exercise := range w.Exercises {
+		exercises = append(exercises, convertExercise(exercise))
 	}
 
-	return &dto.WorkoutExercises{
-		Workout:   workout,
+	return &dto.Workout{
+		ID:        w.ID,
+		UserID:    w.UserID,
+		Name:      w.Name,
+		Notes:     w.Notes,
+		Date:      w.Date,
 		Exercises: exercises,
 	}
-
 }
 
 func FromPaginationToFilter(pag *dto.Pagination) (*model.WorkoutsFilter, error) {
@@ -116,44 +150,27 @@ func FromPaginationToFilter(pag *dto.Pagination) (*model.WorkoutsFilter, error) 
 	return &filter, nil
 }
 
-func ToWorkoutResp(w *model.Workout) *dto.Workout {
-	return &dto.Workout{
-		ID:     w.ID,
-		Date:   w.Date,
-		Name:   w.Name,
-		UserId: w.UserID,
-		Note:   w.Notes,
-	}
-}
-
 func ToWorkoutsResp(workouts []*model.Workout) []*dto.Workout {
-	var wrks []*dto.Workout
+	if workouts == nil {
+		return nil
+	}
+
+	result := make([]*dto.Workout, 0, len(workouts))
 	for _, w := range workouts {
-		wrks = append(wrks, ToWorkoutResp(w))
+		result = append(result, ToGetWorkoutResp(w))
 	}
-
-	return wrks
+	return result
 }
 
-func FromAddExerciseToWorkout(d *dto.WorkoutExercise) *model.WorkoutExercise {
-	return &model.WorkoutExercise{
-		WorkoutID:  d.WorkoutID,
-		ExerciseID: d.ExerciseID,
-		Sets:       d.Sets,
-		Reps:       d.Reps,
-		Weight:     d.Weight,
-		Duration:   d.Duration,
-		Distance:   d.Distance,
-		Notes:      d.Notes,
-		Exercise: model.Exercise{
-			ID:          d.Exercise.ID,
-			Name:        d.Exercise.Name,
-			Type:        d.Exercise.Type,
-			MuscleGroup: d.Exercise.MuscleGroup,
-			Description: d.Exercise.Description,
-		},
+func FromAddExerciseToWorkout(d *dto.AddExerciseRequest, workoutID int64) *model.WorkoutExercise {
+	we := model.NewWorkoutExercise(workoutID, d.ExerciseID, d.Notes)
+	for _, set := range d.Sets {
+		s := model.NewExerciseSet(0, set.SetNumber, set.Weight, set.Reps)
+		we.Sets = append(we.Sets, s)
 	}
+	return we
 }
+
 func ToListExercisesResp(exercises []*model.Exercise) []*dto.Exercise {
 	var wrks []*dto.Exercise
 	for _, ex := range exercises {
@@ -171,30 +188,69 @@ func ToListExercisesResp(exercises []*model.Exercise) []*dto.Exercise {
 	return wrks
 }
 
-func ToPersonalRecord(records []*model.UserRecord) []*dto.Record {
-	var rec []*dto.Record
-	for _, record := range records {
-		ex := dto.Exercise{
-			ID:          record.Exercise.ID,
-			Name:        record.Exercise.Name,
-			Type:        record.Exercise.Type,
-			RecordType:  record.Exercise.RecordType,
-			MuscleGroup: record.Exercise.MuscleGroup,
-			Description: record.Exercise.Description,
-		}
-		rec = append(rec, &dto.Record{
-			ID:         record.ID,
-			UserID:     record.UserID,
-			ExerciseID: record.ExerciseID,
-			Weight:     record.Weight,
-			Reps:       record.Reps,
-			Date:       record.Date,
-			Notes:      record.Notes,
-			Duration:   record.Duration,
-			Sets:       record.Sets,
-			Distance:   record.Distance,
-			Exercise:   ex,
-		})
+func ToPersonalRecord(records []*model.PersonalRecord) []*dto.PersonalRecord {
+	if records == nil {
+		return nil
 	}
-	return rec
+
+	result := make([]*dto.PersonalRecord, 0, len(records))
+	for _, r := range records {
+		result = append(result, toPersonalRecordDTO(r))
+	}
+	return result
+}
+
+func toPersonalRecordDTO(r *model.PersonalRecord) *dto.PersonalRecord {
+	if r == nil {
+		return nil
+	}
+
+	return &dto.PersonalRecord{
+		ID:                r.ID,
+		UserID:            r.UserID,
+		ExerciseID:        r.ExerciseID,
+		RecordType:        string(r.RecordType),
+		Value:             r.Value,
+		WorkoutExerciseID: r.WorkoutExerciseID,
+		AchievedAt:        r.AchievedAt,
+		Exercise:          toExerciseDTO(r.Exercise),
+	}
+}
+
+func toExerciseDTO(exercise *model.Exercise) *dto.Exercise {
+	return &dto.Exercise{
+		ID:          exercise.ID,
+		Name:        exercise.Name,
+		Description: exercise.Description,
+		Type:        string(exercise.Type),
+		MuscleGroup: exercise.MuscleGroup,
+	}
+}
+
+func FromUpdateWorkoutRequest(d *dto.UpdateWorkoutRequest) *model.UpdateWorkout {
+	var wD *time.Time
+	if d.WorkoutDate != nil && *d.WorkoutDate != "" {
+		layout := "2006-01-02" // Формат YYYY-MM-DD
+		parsedDate, _ := time.Parse(layout, *d.WorkoutDate)
+		wD = &parsedDate
+	}
+	return &model.UpdateWorkout{
+		Name:  d.Name,
+		Notes: d.Description,
+		Date:  wD,
+	}
+}
+
+func FromAddCardioToWorkoutRequest(d *dto.AddCardioRequest) *model.CardioRecord {
+	return model.NewCardioRecord(0, d.DurationSeconds, d.DistanceKm)
+}
+
+func ToCreateWorkoutsResp(resp *model.Workout) *dto.Workout {
+	return &dto.Workout{
+		ID:     resp.ID,
+		UserID: resp.UserID,
+		Name:   resp.Name,
+		Notes:  resp.Notes,
+		Date:   resp.Date,
+	}
 }

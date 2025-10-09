@@ -7,6 +7,7 @@ import (
 	apperrors "github.com/biryanim/workoutbook/internal/errors"
 	"github.com/biryanim/workoutbook/internal/service"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -26,18 +27,15 @@ func NewImplementation(authService service.AuthService) *Implementation {
 func (i *Implementation) Register(c *gin.Context) {
 	var registerReq dto.UserRegisterRequest
 
-	fmt.Println("BBBBBBBBBBB")
-
 	if err := c.ShouldBindJSON(&registerReq); err != nil {
-		fmt.Println(err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid input: %v", err)})
 		return
 	}
+	log.Printf("Register input: %+v\n", registerReq)
 
 	fmt.Println(registerReq)
 
 	resp, err := i.authService.Register(c.Request.Context(), converter.FromUserRegistrationRequest(&registerReq))
-	fmt.Println("AAAAAAAAAAAAAAAAAAAAA")
 	if err != nil {
 		fmt.Println(err)
 		appErr := apperrors.FromError(err)

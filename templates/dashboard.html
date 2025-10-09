@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{.csrf_token}}">
+    <title>Мои тренировки - Workout Book</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="container">
+    <header>
+        <div class="header-content">
+            <h1><a href="/dashboard.html">💪 Workout Book</a></h1>
+            <nav>
+                <a href="/dashboard.html" class="active">Тренировки</a>
+                <a href="#" id="recordsLink">Рекорды</a>
+                <a href="#" id="logoutBtn">Выход</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="dashboard">
+            <div class="dashboard-header">
+                <h2>Мои тренировки</h2>
+                <button class="btn btn-primary" id="createWorkoutBtn">+ Новая тренировка</button>
+            </div>
+
+            <div id="workouts-list" class="workouts-list">
+                <div class="loading">Загрузка...</div>
+            </div>
+        </div>
+
+        <!-- Модальное окно создания тренировки -->
+        <div id="createWorkoutModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h3>Создать тренировку</h3>
+
+                <form id="createWorkoutForm">
+                    <div class="form-group">
+                        <label for="workoutName">Название</label>
+                        <input type="text" id="workoutName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="workoutDescription">Описание</label>
+                        <textarea id="workoutDescription" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="workoutDate">Дата</label>
+                        <input type="date" id="workoutDate" required>
+                    </div>
+
+                    <div class="modal-buttons">
+                        <button type="button" class="btn btn-secondary" id="cancelCreate">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Создать</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Модальное окно рекордов -->
+        <div id="recordsModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h3>🏆 Личные рекорды</h3>
+                <div id="records-list" class="records-list">
+                    <div class="loading">Загрузка...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно редактирования тренировки -->
+        <div id="editWorkoutModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close" id="closeEditModal">&times;</span>
+                <h3>Изменить тренировку</h3>
+
+                <form id="editWorkoutForm">
+                    <input type="hidden" id="editWorkoutId">
+
+                    <div class="form-group">
+                        <label for="editWorkoutName">Название</label>
+                        <input type="text" id="editWorkoutName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editWorkoutDescription">Описание</label>
+                        <textarea id="editWorkoutDescription" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editWorkoutDate">Дата</label>
+                        <input type="date" id="editWorkoutDate" required>
+                    </div>
+
+                    <div class="modal-buttons">
+                        <button type="button" class="btn btn-secondary" id="cancelEdit">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script src="/static/js/workouts.js"></script>
+<script src="/static/js/auth.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>

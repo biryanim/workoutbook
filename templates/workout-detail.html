@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{.csrf_token}}">
+    <title>Тренировка - Workout Book</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="container">
+    <header>
+        <div class="header-content">
+            <h1><a href="/dashboard.html">💪 Workout Book</a></h1>
+            <nav>
+                <a href="/dashboard.html">Тренировки</a>
+                <a href="#" id="logoutBtn">Выход</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="workout-detail">
+            <div class="workout-header">
+                <div>
+                    <a href="/dashboard.html" class="back-link">← Назад</a>
+                    <h2 id="workoutName"></h2>
+                    <p id="workoutDate" class="text-muted"></p>
+                </div>
+                <button class="btn btn-primary" id="addExerciseBtn">+ Добавить упражнение</button>
+                <button class="btn btn-danger" id="deleteWorkoutBtn">🗑️ Удалить тренировку</button>
+            </div>
+
+            <div id="exercises-list" class="exercises-list">
+                <div class="loading">Загрузка...</div>
+            </div>
+        </div>
+
+        <!-- Модальное окно добавления упражнения -->
+        <div id="addExerciseModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h3>Добавить упражнение</h3>
+
+                <div class="form-group">
+                    <label>Выберите упражнение</label>
+                    <select id="exerciseSelect">
+                        <option value="">Загрузка...</option>
+                    </select>
+                </div>
+
+                <div id="strengthForm" style="display: none;">
+                    <h4>Подходы</h4>
+                    <div id="sets-container"></div>
+                    <button type="button" class="btn btn-secondary btn-sm" id="addSetBtn">+ Добавить подход</button>
+                </div>
+
+                <div id="cardioForm" style="display: none;">
+                    <h4>Кардио данные</h4>
+                    <div class="form-group">
+                        <label>Дистанция (км)</label>
+                        <input type="number" id="cardioDistance" step="0.1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Время (минуты)</label>
+                        <input type="number" id="cardioDuration" step="1" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Средний пульс</label>
+                        <input type="number" id="cardioHeartRate" min="30" max="250">
+                    </div>
+                    <div class="form-group">
+                        <label>Калории</label>
+                        <input type="number" id="cardioCalories" min="0">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Заметки</label>
+                    <textarea id="exerciseNotes" rows="2"></textarea>
+                </div>
+
+                <div class="modal-buttons">
+                    <button type="button" class="btn btn-secondary" id="cancelAddExercise">Отмена</button>
+                    <button type="button" class="btn btn-primary" id="saveExercise">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script src="/static/js/workouts.js"></script>
+<script src="/static/js/auth.js"></script>
+<script src="/static/js/app.js"></script>
+<script>
+    const workoutId = new URLSearchParams(window.location.search).get('id');
+    if (!workoutId) {
+        window.location.href = '/dashboard.html';
+    }
+</script>
+</body>
+</html>

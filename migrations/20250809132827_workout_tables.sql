@@ -14,7 +14,6 @@ CREATE TABLE IF NOT EXISTS exercises (
     type VARCHAR(20) NOT NULL CHECK (type IN ('strength', 'cardio')),
     muscle_group VARCHAR(50),
     description TEXT,
-    record_type VARCHAR(20) NOT NULL CHECK (record_type IN ('weight', 'reps', 'sets', 'distance', 'duration')),
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
@@ -32,27 +31,37 @@ CREATE TABLE IF NOT EXISTS workout_exercises (
     id int generated always as identity primary key,
     workout_id INTEGER REFERENCES workouts(id) ON DELETE CASCADE,
     exercise_id INTEGER REFERENCES exercises(id),
-    sets INTEGER DEFAULT 1,
-    reps INTEGER DEFAULT 0,
-    weight DECIMAL(5,2) DEFAULT 0,
-    duration INTEGER DEFAULT 0, -- для кардио в секундах
-    distance DECIMAL(6,2) DEFAULT 0, -- для кардио в км
     notes TEXT,
     created_at timestamp not null default now()
+);
+
+create table exercise_sets(
+    id int generated always as identity primary key,
+    workout_exercise_id int not null references workout_exercises(id) on delete cascade ,
+    set_number int not null,
+    weight decimal(6, 2),
+    reps int,
+    created_at timestamp default now(),
+    unique (workout_exercise_id, set_number)
+);
+
+create table cardio_records(
+    id int generated always as identity primary key ,
+    workout_exercise_id int not null references workout_exercises(id) on delete cascade ,
+    distance_km decimal(6,2),
+    duration_seconds int,
+    created_at timestamp default now()
 );
 
 CREATE TABLE IF NOT EXISTS personal_records (
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     exercise_id INTEGER REFERENCES exercises(id),
-    weight DECIMAL(5,2) DEFAULT NULL,
-    reps INTEGER DEFAULT NULL,
-    sets INTEGER DEFAULT NULL,
-    duration INTEGER DEFAULT NULL,
-    distance DECIMAL(7,2) DEFAULT NULL,
-    date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    notes TEXT,
-    UNIQUE(user_id, exercise_id)
+    record_type VARCHAR(20) NOT NULL CHECK (record_type IN ('max_weight', 'max_reps', 'max_distance', 'best_time')),
+    value DECIMAL(10, 2) NOT NULL,
+    workout_exercise_id INTEGER REFERENCES workout_exercises(id) ON DELETE SET NULL,
+    achieved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, exercise_id, record_type)
 );
 
 CREATE INDEX IF NOT EXISTS idx_workouts_user_id ON workouts(user_id);
@@ -62,33 +71,31 @@ CREATE INDEX IF NOT EXISTS idx_workout_exercises_exercise_id ON workout_exercise
 CREATE INDEX IF NOT EXISTS idx_personal_records_user_id ON personal_records(user_id);
 CREATE INDEX IF NOT EXISTS idx_personal_records_exercise_id ON personal_records(exercise_id);
 
-INSERT INTO exercises (name, type, muscle_group, description, record_type) VALUES
--- Силовые упражнения
-('Жим лежа', 'strength', 'Грудь', 'Базовое упражнение для развития грудных мышц, передних дельт и трицепсов', 'weight'),
-('Приседания со штангой', 'strength', 'Ноги', 'Базовое упражнение для развития квадрицепсов, ягодичных мышц и задней поверхности бедра', 'weight'),
-('Становая тяга', 'strength', 'Спина', 'Базовое упражнение для развития мышц спины, ног и укрепления всего тела', 'weight'),
-('Подтягивания', 'strength', 'Спина', 'Упражнение для развития широчайших мышц спины и бицепсов', 'reps'),
-('Отжимания', 'strength', 'Грудь', 'Упражнение с собственным весом для развития грудных мышц, трицепсов и дельт', 'reps'),
-('Жим штанги стоя', 'strength', 'Плечи', 'Упражнение для развития дельтовидных мышц и стабилизаторов корпуса', 'weight'),
-('Тяга штанги в наклоне', 'strength', 'Спина', 'Упражнение для развития широчайших мышц спины и задних дельт', 'weight'),
-('Сгибание рук со штангой', 'strength', 'Бицепс', 'Изолирующее упражнение для развития бицепсов', 'weight'),
-('Французский жим', 'strength', 'Трицепс', 'Изолирующее упражнение для развития трицепсов', 'weight'),
-('Подъемы на носки', 'strength', 'Голени', 'Упражнение для развития икроножных мышц', 'weight'),
-('Планка', 'strength', 'Пресс', 'Статическое упражнение для укрепления мышц кора', 'duration'),
-('Скручивания', 'strength', 'Пресс', 'Упражнение для развития прямых мышц живота', 'reps'),
-
--- Кардио упражнения
-('Бег', 'cardio', 'Кардио', 'Кардиотренировка для развития выносливости и сжигания калорий', 'distance'),
-('Быстрая ходьба', 'cardio', 'Кардио', 'Низкоинтенсивная кардиотренировка подходящая для начинающих', 'duration'),
-('Велосипед', 'cardio', 'Кардио', 'Кардиотренировка на велосипеде или велотренажере', 'distance'),
-('Эллиптический тренажер', 'cardio', 'Кардио', 'Кардиотренировка на эллиптическом тренажере', 'distance'),
-('Плавание', 'cardio', 'Кардио', 'Комплексная кардиотренировка задействующая все группы мышц', 'distance'),
-('Гребля', 'cardio', 'Кардио', 'Кардиотренировка на гребном тренажере', 'distance'),
-('Степпер', 'cardio', 'Кардио', 'Кардиотренировка имитирующая подъем по лестнице', 'duration'),
-('Прыжки на скакалке', 'cardio', 'Кардио', 'Высокоинтенсивная кардиотренировка для развития координации', 'sets'),
-('HIIT тренировка', 'cardio', 'Кардио', 'Высокоинтенсивная интервальная тренировка', 'duration'),
-('Танцы', 'cardio', 'Кардио', 'Кардиотренировка в виде танцевальных движений', 'duration')
+INSERT INTO exercises (name, type, muscle_group, description) VALUES
+    ('Жим лежа', 'strength', 'Грудь', 'Базовое упражнение для развития грудных мышц, передних дельт и трицепсов'),
+    ('Приседания со штангой', 'strength', 'Ноги', 'Базовое упражнение для развития квадрицепсов, ягодичных мышц и задней поверхности бедра'),
+    ('Становая тяга', 'strength', 'Спина', 'Базовое упражнение для развития мышц спины, ног и укрепления всего тела'),
+    ('Подтягивания', 'strength', 'Спина', 'Упражнение для развития широчайших мышц спины и бицепсов'),
+    ('Отжимания', 'strength', 'Грудь', 'Упражнение с собственным весом для развития грудных мышц, трицепсов и дельт'),
+    ('Жим штанги стоя', 'strength', 'Плечи', 'Упражнение для развития дельтовидных мышц и стабилизаторов корпуса'),
+    ('Тяга штанги в наклоне', 'strength', 'Спина', 'Упражнение для развития широчайших мышц спины и задних дельт'),
+    ('Сгибание рук со штангой', 'strength', 'Бицепс', 'Изолирующее упражнение для развития бицепсов'),
+    ('Французский жим', 'strength', 'Трицепс', 'Изолирующее упражнение для развития трицепсов'),
+    ('Подъемы на носки', 'strength', 'Голени', 'Упражнение для развития икроножных мышц'),
+    ('Планка', 'strength', 'Пресс', 'Статическое упражнение для укрепления мышц кора'),
+    ('Скручивания', 'strength', 'Пресс', 'Упражнение для развития прямых мышц живота'),
+    ('Бег', 'cardio', 'Кардио', 'Кардиотренировка для развития выносливости и сжигания калорий'),
+    ('Быстрая ходьба', 'cardio', 'Кардио', 'Низкоинтенсивная кардиотренировка подходящая для начинающих'),
+    ('Велосипед', 'cardio', 'Кардио', 'Кардиотренировка на велосипеде или велотренажере'),
+    ('Эллиптический тренажер', 'cardio', 'Кардио', 'Кардиотренировка на эллиптическом тренажере'),
+    ('Плавание', 'cardio', 'Кардио', 'Комплексная кардиотренировка задействующая все группы мышц'),
+    ('Гребля', 'cardio', 'Кардио', 'Кардиотренировка на гребном тренажере'),
+    ('Степпер', 'cardio', 'Кардио', 'Кардиотренировка имитирующая подъем по лестнице'),
+    ('Прыжки на скакалке', 'cardio', 'Кардио', 'Высокоинтенсивная кардиотренировка для развития координации'),
+    ('HIIT тренировка', 'cardio', 'Кардио', 'Высокоинтенсивная интервальная тренировка'),
+    ('Танцы', 'cardio', 'Кардио', 'Кардиотренировка в виде танцевальных движений')
 ON CONFLICT (name) DO NOTHING;
+
 -- +goose StatementEnd
 
 -- +goose Down

@@ -2,23 +2,43 @@ package model
 
 import (
 	"database/sql"
+	"github.com/pkg/errors"
 	"time"
 )
 
 type Workout struct {
 	ID        int64
 	UserID    int64
-	Date      time.Time
-	Notes     string
 	Name      string
+	Notes     string
+	Date      time.Time
 	CreatedAt time.Time
 	UpdatedAt sql.NullTime
+	Exercises []*WorkoutExercise
 }
 
-type WorkoutSet struct {
-	ID         int64
-	WorkoutID  int64
-	ExerciseID int64
+func NewWorkout(userID int64, name, notes string, date time.Time) *Workout {
+	return &Workout{
+		UserID:    userID,
+		Name:      name,
+		Notes:     notes,
+		Date:      date,
+		Exercises: make([]*WorkoutExercise, 0),
+	}
+}
+
+func (w *Workout) Validate() error {
+	if w.UserID == 0 {
+		return errors.New("invalid user ID")
+	}
+	if w.Name == "" {
+		return errors.New("workout name cannot be empty")
+	}
+	return nil
+}
+
+func (w *Workout) AddExercise(exercise *WorkoutExercise) {
+	w.Exercises = append(w.Exercises, exercise)
 }
 
 type WorkoutsFilter struct {
@@ -28,43 +48,13 @@ type WorkoutsFilter struct {
 	Limit     uint64
 }
 
-type WorkoutExercise struct {
-	ID         int64
-	WorkoutID  int64
-	ExerciseID int64
-	Sets       int
-	Reps       int
-	Weight     float64
-	Duration   int
-	Distance   float64
-	Notes      string
-	Exercise   Exercise
-}
-
-type Exercise struct {
-	ID          int64
-	Name        string
-	Type        string
-	RecordType  string
-	MuscleGroup string
-	Description string
-}
-
 type WorkoutExercises struct {
 	Workout   *Workout
 	Exercises []*WorkoutExercise
 }
 
-type UserRecord struct {
-	ID         int64
-	UserID     int64
-	ExerciseID int64
-	Weight     float64
-	Reps       int
-	Sets       int
-	Distance   float64
-	Duration   int
-	Date       time.Time
-	Notes      string
-	Exercise   Exercise
+type UpdateWorkout struct {
+	Name  *string
+	Notes *string
+	Date  *time.Time
 }
