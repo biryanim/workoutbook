@@ -27,4 +27,6 @@ type WorkoutService interface {
 	//UpdatePersonalRecord(ctx context.Context, userID int64, we *model.WorkoutExercise, date time.Time) error
 	GetPersonalRecords(ctx context.Context, userId int64) ([]*model.PersonalRecord, error)
 	DeleteCardioRecord(ctx context.Context, cardioID int64) error
+
+	AddSetToExercise(ctx context.Context, workoutExerciseID, userID int64, weight float64, reps int) error
 }

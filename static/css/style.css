@@ -540,3 +540,15 @@ footer {
         grid-template-columns: 1fr;
     }
 }
+
+.add-set-row input {
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.add-set-row .btn-sm {
+    padding: 4px 8px;
+}

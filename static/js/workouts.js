@@ -95,41 +95,91 @@ function openWorkout(id) {
 
 // Загрузка деталей тренировки
 async function loadWorkoutDetail(workoutId) {
-    const container = document.getElementById('exercises-list');
-
     try {
         const data = await WorkoutAPI.getWorkout(workoutId);
         const workout = data.workout;
 
-        // Обновляем заголовок
         document.getElementById('workoutName').textContent = workout.name;
-        document.getElementById('workoutDate').textContent = formatDate(workout.workout_date);
+        document.getElementById('workoutDate').textContent = formatDate(workout.date);
 
+        const container = document.getElementById('exercises-list');
         const exercises = workout.exercises || [];
 
         if (exercises.length === 0) {
             container.innerHTML = `
-                <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+                <div class="empty-state">
                     <p>В этой тренировке пока нет упражнений</p>
                 </div>
             `;
-            return;
+        } else {
+            container.innerHTML = exercises.map(ex => {
+                if (ex.exercise.type === 'strength') {
+                    return renderStrengthExercise(ex);
+                } else {
+                    return renderCardioExercise(ex);
+                }
+            }).join('');
+
+            // Обработчики удаления подходов
+            document.querySelectorAll('.delete-set').forEach(btn => {
+                btn.onclick = async () => {
+                    if (confirm('Удалить этот подход?')) {
+                        const setId = btn.getAttribute('data-set-id');
+                        try {
+                            await WorkoutAPI.deleteExerciseSet(setId);
+                            loadWorkoutDetail(workoutId);
+                        } catch (error) {
+                            alert('Ошибка: ' + error.message);
+                        }
+                    }
+                };
+            });
+
+            // Обработчики удаления кардио записей
+            document.querySelectorAll('.delete-cardio').forEach(btn => {
+                btn.onclick = async () => {
+                    if (confirm('Удалить эту кардио запись?')) {
+                        const cardioId = btn.getAttribute('data-cardio-id');
+                        try {
+                            await WorkoutAPI.deleteCardioRecord(cardioId);
+                            loadWorkoutDetail(workoutId);
+                        } catch (error) {
+                            alert('Ошибка: ' + error.message);
+                        }
+                    }
+                };
+            });
+
+            // ===== ДОБАВЬТЕ ЭТО =====
+            // Обработчики добавления новых подходов
+            document.querySelectorAll('.add-set-btn').forEach(btn => {
+                btn.onclick = async () => {
+                    const workoutExerciseId = btn.getAttribute('data-workout-exercise-id');
+                    const row = btn.closest('.add-set-row');
+                    const weight = parseFloat(row.querySelector('.new-set-weight').value);
+                    const reps = parseInt(row.querySelector('.new-set-reps').value);
+
+                    if (!weight || !reps) {
+                        alert('Заполните вес и количество повторений');
+                        return;
+                    }
+
+                    try {
+                        await WorkoutAPI.addSetToExercise(workoutExerciseId, weight, reps);
+                        loadWorkoutDetail(workoutId); // Перезагружаем тренировку
+                    } catch (error) {
+                        alert('Ошибка: ' + error.message);
+                    }
+                };
+            });
+            // ===== КОНЕЦ ДОБАВЛЕНИЯ =====
         }
-
-        container.innerHTML = exercises.map(ex => {
-            if (ex.exercise.type === 'strength') {
-                return renderStrengthExercise(ex);
-            } else {
-                return renderCardioExercise(ex);
-            }
-        }).join('');
-
-        // Добавляем обработчики удаления
-        attachDeleteHandlers();
     } catch (error) {
-        container.innerHTML = `<div class="error-message">${error.message}</div>`;
+        console.error('Error loading workout:', error);
+        alert('Ошибка загрузки тренировки: ' + error.message);
     }
 }
+
 
 // Отрисовка силового упражнения
 function renderStrengthExercise(ex) {
@@ -144,6 +194,7 @@ function renderStrengthExercise(ex) {
                 </div>
             </div>
             ${ex.notes ? `<p style="color: var(--text-muted); margin-bottom: 10px;">${escapeHtml(ex.notes)}</p>` : ''}
+            
             <table class="sets-table">
                 <thead>
                     <tr>
@@ -166,11 +217,27 @@ function renderStrengthExercise(ex) {
                             </td>
                         </tr>
                     `).join('')}
+                    <!-- Форма добавления нового подхода -->
+                    <tr class="add-set-row" data-exercise-id="${ex.id}">
+                        <td>Подход ${sets.length + 1}</td>
+                        <td>
+                            <input type="number" class="new-set-weight" placeholder="Вес" step="0.5" min="0" style="width: 70px; padding: 4px;">
+                        </td>
+                        <td>
+                            <input type="number" class="new-set-reps" placeholder="Повт" min="1" style="width: 60px; padding: 4px;">
+                        </td>
+                        <td>
+                            <button class="btn btn-primary btn-sm add-set-btn" data-workout-exercise-id="${ex.id}">
+                                ➕
+                            </button>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
     `;
 }
+
 
 // Отрисовка кардио упражнения
 function renderCardioExercise(ex) {

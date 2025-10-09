@@ -151,6 +151,8 @@ func setupRoutes(r *gin.Engine, authHandler *authImpl.Implementation, workoutHan
 		protected.POST("/workouts/:id/exercises", workoutHandler.AddExerciseToWorkout)
 		protected.POST("/workouts/:id/cardio", workoutHandler.AddCardioToWorkout)
 
+		protected.POST("/workout-exercises/:id/sets", workoutHandler.AddSetToExercise)
+
 		protected.DELETE("/sets/:set_id", workoutHandler.DeleteExerciseSet)
 		protected.DELETE("/cardio/:cardio_id", workoutHandler.DeleteCardioRecord)
 

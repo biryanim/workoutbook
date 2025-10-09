@@ -56,10 +56,10 @@ create table cardio_records(
 CREATE TABLE IF NOT EXISTS personal_records (
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    exercise_id INTEGER REFERENCES exercises(id),
+    exercise_id INTEGER REFERENCES exercises(id) ON DELETE CASCADE ,
     record_type VARCHAR(20) NOT NULL CHECK (record_type IN ('max_weight', 'max_reps', 'max_distance', 'best_time')),
     value DECIMAL(10, 2) NOT NULL,
-    workout_exercise_id INTEGER REFERENCES workout_exercises(id) ON DELETE SET NULL,
+    workout_exercise_id INTEGER REFERENCES workout_exercises(id) ON DELETE CASCADE ,
     achieved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, exercise_id, record_type)
 );
@@ -108,6 +108,8 @@ DROP INDEX IF EXISTS idx_workouts_date;
 DROP INDEX IF EXISTS idx_workouts_user_id;
 
 DROP TABLE IF EXISTS personal_records CASCADE;
+DROP TABLE IF EXISTS cardio_records CASCADE;
+DROP TABLE IF EXISTS exercise_sets CASCADE ;
 DROP TABLE IF EXISTS workout_exercises CASCADE;
 DROP TABLE IF EXISTS workouts CASCADE;
 DROP TABLE IF EXISTS exercises CASCADE;

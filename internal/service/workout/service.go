@@ -186,13 +186,26 @@ func (s *serv) DeleteExerciseSet(ctx context.Context, exerciseSetID int64) error
 		}
 
 		workoutExerciseID := set.WorkoutExerciseID
-		deletedSetNumber := set.SetNumber
 
 		if err := s.workoutRepository.DeleteExerciseSet(ctx, exerciseSetID); err != nil {
 			return err
 		}
+		sets, err := s.workoutRepository.GetExerciseSets(ctx, workoutExerciseID)
+		if err != nil {
+			return fmt.Errorf("failed to get remaining sets: %w", err)
+		}
 
-		return s.workoutRepository.ReorderExerciseSets(ctx, workoutExerciseID, deletedSetNumber)
+		if len(sets) == 0 {
+			fmt.Println("AAAAAAAAAAAAAAAAAAAAAAa")
+			err = s.workoutRepository.DeleteWorkoutExercise(ctx, workoutExerciseID)
+			if err != nil {
+				return fmt.Errorf("failed to delete workout exercise: %w", err)
+			}
+		} else {
+			return s.workoutRepository.ReorderExerciseSets(ctx, workoutExerciseID)
+		}
+
+		return nil
 	})
 }
 
@@ -277,89 +290,20 @@ func (s *serv) DeleteCardioRecord(ctx context.Context, cardioID int64) error {
 	})
 }
 
-//func (s *serv) UpdatePersonalRecord(ctx context.Context, userID int64, we *model.WorkoutExercise, date time.Time) error {
-//	err := s.txManager.ReadCommited(ctx, func(ctx context.Context) error {
-//		record, err := s.workoutRepository.GetPersonalRecord(ctx, userID, we.ExerciseID)
-//		user := &model.UserRecord{
-//			UserID:     userID,
-//			ExerciseID: we.ExerciseID,
-//			Weight:     we.Weight,
-//			Reps:       we.Reps,
-//			Sets:       we.Sets,
-//			Duration:   we.Duration,
-//			Distance:   we.Distance,
-//			Date:       date,
-//		}
-//		if record == nil {
-//			_, err = s.workoutRepository.AddRecord(ctx, user)
-//			if err != nil {
-//				return err
-//			}
-//			return nil
-//		}
-//
-//		exercise, err := s.workoutRepository.GetExerciseByID(ctx, we.ExerciseID)
-//		if err != nil {
-//			return err
-//		}
-//		we.Exercise = *exercise
-//
-//		switch we.Exercise.Type {
-//		case "strength":
-//			// Особая логика для упражнений с собственным весом без веса
-//			switch we.Exercise.Name {
-//			case "Отжимания", "Подтягивания", "Скручивания":
-//				if we.Reps > record.Reps {
-//					err = s.workoutRepository.UpdatePersonalRecord(ctx, user)
-//					if err != nil {
-//						return err
-//					}
-//				}
-//			default:
-//				newMax := we.Weight * (1 + float64(we.Reps)/30)
-//				currentMax := record.Weight * (1 + float64(record.Reps)/30)
-//				if newMax > currentMax {
-//					err = s.workoutRepository.UpdatePersonalRecord(ctx, user)
-//					if err != nil {
-//						return err
-//					}
-//				}
-//			}
-//		case "cardio":
-//			switch we.Exercise.RecordType {
-//			case "distance":
-//				if we.Distance > record.Distance {
-//					err = s.workoutRepository.UpdatePersonalRecord(ctx, user)
-//					if err != nil {
-//						return err
-//					}
-//				}
-//			case "duration":
-//				if we.Duration > record.Duration {
-//					err = s.workoutRepository.UpdatePersonalRecord(ctx, user)
-//					if err != nil {
-//						return err
-//					}
-//				}
-//			case "sets":
-//				if we.Sets > record.Sets {
-//					err = s.workoutRepository.UpdatePersonalRecord(ctx, user)
-//					if err != nil {
-//						return err
-//					}
-//				}
-//			default:
-//				return errors.New("unknown cardio record type")
-//			}
-//		default:
-//			return errors.New("unsupported exercise type")
-//		}
-//
-//		return nil
-//	})
-//
-//	if err != nil {
-//		return err
-//	}
-//	return nil
-//}
+func (s *serv) AddSetToExercise(ctx context.Context, workoutExerciseID, userID int64, weight float64, reps int) error {
+	return s.txManager.ReadCommited(ctx, func(ctx context.Context) error {
+		currentSets, err := s.workoutRepository.GetExerciseSets(ctx, workoutExerciseID)
+		if err != nil {
+			return fmt.Errorf("failed to get current sets: %w", err)
+		}
+
+		newSetNumber := len(currentSets) + 1
+
+		err = s.workoutRepository.CreateExerciseSet(ctx, workoutExerciseID, newSetNumber, weight, reps)
+		if err != nil {
+			return fmt.Errorf("failed to create set: %w", err)
+		}
+
+		return nil
+	})
+}

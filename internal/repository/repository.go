@@ -22,13 +22,14 @@ type WorkoutRepository interface {
 
 	AddWorkoutExercise(ctx context.Context, we *model.WorkoutExercise) error
 	GetWorkoutExercises(ctx context.Context, workoutID int64) ([]*model.WorkoutExercise, error)
+	DeleteWorkoutExercise(ctx context.Context, workoutExerciseID int64) error
 
 	AddExerciseSet(ctx context.Context, set *model.ExerciseSet) error
 	GetExerciseSets(ctx context.Context, workoutExerciseID int64) ([]*model.ExerciseSet, error)
 	GetExerciseSetByID(ctx context.Context, id int64) (*model.ExerciseSet, error)
 	UpdateExerciseSet(ctx context.Context, set *model.ExerciseSet) error
 	DeleteExerciseSet(ctx context.Context, id int64) error
-	ReorderExerciseSets(ctx context.Context, workoutExerciseID int64, deletedSetNumber int) error
+	ReorderExerciseSets(ctx context.Context, workoutExerciseID int64) error
 
 	//GetExercisesByWorkoutID(ctx context.Context, workoutID int64) ([]*model.WorkoutExercise, error)
 	//IsUserHaveWorkout(ctx context.Context, userId, workoutId int64) (bool, error)
@@ -45,4 +46,6 @@ type WorkoutRepository interface {
 	GetCardioRecord(ctx context.Context, workoutExerciseID int64) (*model.CardioRecord, error)
 	UpdateCardioRecord(ctx context.Context, cardio *model.CardioRecord) error
 	DeleteCardioRecord(ctx context.Context, id int64) error
+
+	CreateExerciseSet(ctx context.Context, workoutExerciseID int64, setNumber int, weight float64, reps int) error
 }

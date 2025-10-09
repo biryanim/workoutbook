@@ -189,6 +189,24 @@ const WorkoutAPI = {
         }
 
         return await response.json();
+    },
+
+    async addSetToExercise(workoutExerciseId, weight, reps) {
+        const response = await fetch(`${API_BASE_URL}/workout-exercises/${workoutExerciseId}/sets`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                weight: weight,
+                reps: reps
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Ошибка добавления подхода');
+        }
+
+        return await response.json();
     }
 };
 

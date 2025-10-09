@@ -226,3 +226,30 @@ func (i *Implementation) DeleteCardioRecord(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "cardio deleted"})
 }
+
+func (i *Implementation) AddSetToExercise(c *gin.Context) {
+	userID := c.GetInt64("user_id")
+	workoutExerciseID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid workout exercise id"})
+		return
+	}
+
+	var req struct {
+		Weight float64 `json:"weight" binding:"required"`
+		Reps   int     `json:"reps" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input"})
+		return
+	}
+
+	err = i.workoutService.AddSetToExercise(c.Request.Context(), workoutExerciseID, userID, req.Weight, req.Reps)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "set added"})
+}
