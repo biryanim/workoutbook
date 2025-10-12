@@ -61,7 +61,7 @@ func (s *serv) GetWorkout(ctx context.Context, userId, workoutId int64) (*model.
 			}
 			ex.Sets = sets
 		} else if ex.Exercise.IsCardio() {
-			cardio, err := s.workoutRepository.GetCardioRecord(ctx, ex.ID)
+			cardio, err := s.workoutRepository.GetCardioRecordByWorkoutExerciseID(ctx, ex.ID)
 			if err != nil {
 				return nil, err
 			}
@@ -286,7 +286,11 @@ func (s *serv) GetPersonalRecords(ctx context.Context, userId int64) ([]*model.P
 
 func (s *serv) DeleteCardioRecord(ctx context.Context, cardioID int64) error {
 	return s.txManager.ReadCommited(ctx, func(ctx context.Context) error {
-		return s.workoutRepository.DeleteCardioRecord(ctx, cardioID)
+		cardio, err := s.workoutRepository.GetCardioRecordByID(ctx, cardioID)
+		if err != nil {
+			return err
+		}
+		return s.workoutRepository.DeleteWorkoutExercise(ctx, cardio.WorkoutExerciseID)
 	})
 }
 

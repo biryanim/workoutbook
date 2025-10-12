@@ -599,7 +599,7 @@ func (r *repo) AddCardioRecord(ctx context.Context, cardio *model.CardioRecord) 
 	return nil
 }
 
-func (r *repo) GetCardioRecord(ctx context.Context, workoutExerciseID int64) (*model.CardioRecord, error) {
+func (r *repo) GetCardioRecordByWorkoutExerciseID(ctx context.Context, workoutExerciseID int64) (*model.CardioRecord, error) {
 	query, args, err := r.qb.
 		Select("id", "workout_exercise_id", "distance_km", "duration_seconds", "created_at").
 		From("cardio_records").
@@ -698,4 +698,28 @@ func (r *repo) CreateExerciseSet(ctx context.Context, workoutExerciseID int64, s
 		return fmt.Errorf("failed to insert exercise_sets: %w", err)
 	}
 	return nil
+}
+
+func (r *repo) GetCardioRecordByID(ctx context.Context, id int64) (*model.CardioRecord, error) {
+	query, args, err := r.qb.
+		Select("id", "workout_exercise_id", "distance_km", "duration_seconds", "created_at").
+		From("cardio_records").
+		Where(squirrel.Eq{"id": id}).ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build select query: %w", err)
+	}
+
+	var card model.CardioRecord
+	err = r.db.DB().QueryRowContext(ctx, query, args...).Scan(
+		&card.ID,
+		&card.WorkoutExerciseID,
+		&card.DistanceKm,
+		&card.DurationSeconds,
+		&card.CreatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan cardio record: %w", err)
+	}
+
+	return &card, nil
 }

@@ -31,19 +31,15 @@ type WorkoutRepository interface {
 	DeleteExerciseSet(ctx context.Context, id int64) error
 	ReorderExerciseSets(ctx context.Context, workoutExerciseID int64) error
 
-	//GetExercisesByWorkoutID(ctx context.Context, workoutID int64) ([]*model.WorkoutExercise, error)
-	//IsUserHaveWorkout(ctx context.Context, userId, workoutId int64) (bool, error)
 	GetExercises(ctx context.Context, typ string) ([]*model.Exercise, error)
 	GetExerciseByID(ctx context.Context, exerciseID int64) (*model.Exercise, error)
 	GetPersonalRecord(ctx context.Context, userID, exerciseID int64, recordType model.RecordType) (*model.PersonalRecord, error)
 	GetPersonalRecords(ctx context.Context, userID int64) ([]*model.PersonalRecord, error)
 	UpsertPersonalRecord(ctx context.Context, record *model.PersonalRecord) error
-	//GetPersonalRecord(ctx context.Context, userID, exerciseID int64) (*model.UserRecord, error)
-	//AddRecord(ctx context.Context, user *model.UserRecord) (int64, error)
-	//UpdatePersonalRecord(ctx context.Context, user *model.UserRecord) error
-	//ListRecords(ctx context.Context, userId int64) ([]*model.UserRecord, error)
+
 	AddCardioRecord(ctx context.Context, cardio *model.CardioRecord) error
-	GetCardioRecord(ctx context.Context, workoutExerciseID int64) (*model.CardioRecord, error)
+	GetCardioRecordByWorkoutExerciseID(ctx context.Context, workoutExerciseID int64) (*model.CardioRecord, error)
+	GetCardioRecordByID(ctx context.Context, id int64) (*model.CardioRecord, error)
 	UpdateCardioRecord(ctx context.Context, cardio *model.CardioRecord) error
 	DeleteCardioRecord(ctx context.Context, id int64) error
 
